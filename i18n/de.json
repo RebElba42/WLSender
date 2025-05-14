@@ -1,0 +1,14 @@
+{
+    "app_title": "Send QSO to WLGate",
+    "config_title": "Configuration",
+    "wlgate_ip": "WLGate IP",
+    "wlgate_port": "WLGate Port",
+    "qrz_username": "QRZ.com Username",
+    "qrz_password": "QRZ.com Password",
+    "station_callsign": "Station Callsign",
+    "flrig_host": "FLRig Host",
+    "flrig_port": "FLRig Port",
+    "language": "Language",
+    "language_de": "German",
+    "language_en": "English"
+}
