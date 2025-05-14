@@ -87,12 +87,18 @@ class CallsignTagEditor(QtWidgets.QDialog):
         if not call or not tag:
             return
         tags = self.data.setdefault(call, [])
+        if len(tags) >= 5:
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.translation.get("tag_limit_title", "Tag limit reached"),
+                self.translation.get("tag_limit_msg", "A maximum of 5 tags per callsign is allowed.")
+            )
+            return
         if tag not in tags:
             tags.append(tag)
             self.tag_list.addItem(tag)
             self.update_callsign_list()
         self.new_tag_input.clear()
-        # NICHT self.call_input.clear() und NICHT self.tag_list.clear()
 
     def remove_selected_tag(self):
         call = self.call_input.text().strip().upper()
@@ -106,7 +112,6 @@ class CallsignTagEditor(QtWidgets.QDialog):
                 tags.remove(tag)
             self.tag_list.takeItem(self.tag_list.row(item))
         self.update_callsign_list()
-        # NICHT self.call_input.clear() und NICHT self.tag_list.clear()
         
     def save_and_close(self):
         with open(CALLSIGN_TAGS_FILE, "w", encoding="utf-8") as f:

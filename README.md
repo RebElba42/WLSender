@@ -20,6 +20,16 @@
 
 ---
 
+### Callsign Tagging
+
+WLSender allows you to assign and manage custom tags for any callsign.  
+- Tags are displayed as bubbles below the callsign field whenever a matching callsign is entered.
+- The tag database is stored as a JSON file in the `data` directory.
+- You can add, edit, or remove tags for any callsign using the built-in tag editor dialog, accessible from the toolbar or menu.
+- Typical use cases include marking special contacts (e.g., "POTA", "Club Member", "Contest QSO") or adding personal notes to callsigns.
+
+---
+
 ### Installation
 
 1. **Clone the repository:**

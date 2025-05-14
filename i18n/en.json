@@ -62,5 +62,7 @@
     "add_tag": "Add Tag",
     "remove_selected": "Remove Selected",
     "save": "Save",
-    "edit_callsign_tags": "Edit Callsign Tags"
+    "edit_callsign_tags": "Edit Callsign Tags",
+    "tag_limit_title": "Tag limit reached",
+    "tag_limit_msg": "A maximum of 5 tags per callsign is allowed."
 }

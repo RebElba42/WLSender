@@ -62,5 +62,7 @@
     "add_tag": "Tag hinzufügen",
     "remove_selected": "Ausgewählte entfernen",
     "save": "Speichern",
-    "edit_callsign_tags": "Rufzeichen-Tags bearbeiten"
+    "edit_callsign_tags": "Rufzeichen-Tags bearbeiten",
+    "tag_limit_title": "Tag-Limit erreicht",
+    "tag_limit_msg": "Pro Rufzeichen sind maximal 5 Tags erlaubt."
 }
