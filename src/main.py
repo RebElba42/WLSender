@@ -5,13 +5,7 @@ import qdarkstyle
 from src.config_dialog import load_config
 from src.utils import load_translation
 from src.qso_form import QSOForm
-
-def resource_path(relative_path):
-    """
-    Get absolute path to resource, works for dev and for PyInstaller.
-    """
-    base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    return os.path.join(base_path, relative_path)
+from src.utils import resource_path
 
 def main():
     app = QtWidgets.QApplication(sys.argv)

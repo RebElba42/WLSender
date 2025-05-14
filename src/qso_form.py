@@ -10,6 +10,8 @@ from src.config_dialog import ConfigDialog, save_config
 from src.logger import log_error, log_info
 from src.utils import now_utc_str
 from src.callsign_tag_editor import CallsignTagEditor
+from src.utils import user_data_path
+from src.utils import resource_path
 import socket
 import os
 import json
@@ -26,7 +28,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.qrz_session_key = None
         self.flrig_worker = None
         self.last_flrig_debug = ""
-        icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "icons", "wlgate.png"))
+        icon_path = resource_path("icons/wlgate.png")
         self.setWindowIcon(QtGui.QIcon(icon_path))
 
         self.init_ui()
@@ -117,7 +119,10 @@ class QSOForm(QtWidgets.QMainWindow):
             widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
         # Form Layout (Labels aus translation)
-        self.form_layout.addRow(self.translation["flrig_debug"], self.flrig_debug_line)
+        self.flrig_debug_line = None
+        self.debug_row_index = self.form_layout.rowCount()
+        if self.config.get("show_debug", False):
+            self.add_flrig_debug_field()
         self.form_layout.addRow(self.translation["call"], self.call)
         self.form_layout.addRow("", self.call_tags_widget)  
         self.form_layout.addRow(self.translation["band"], self.band)
@@ -250,6 +255,8 @@ class QSOForm(QtWidgets.QMainWindow):
                 self.flrig_debug_line.setText(debug_msg)
 
     def create_toolbar_and_menu(self):
+        for tb in self.findChildren(QtWidgets.QToolBar):
+            self.removeToolBar(tb)
         send_icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
         reset_icon = self.style().standardIcon(QtWidgets.QStyle.SP_BrowserReload)
         exit_icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCloseButton)
@@ -376,21 +383,97 @@ class QSOForm(QtWidgets.QMainWindow):
             self.statusbar.showMessage(f"{self.translation['send_error']}: {e}")
             log_error(f"WLGate send error: {e}")
 
+    def add_flrig_debug_field(self):
+        font = self.font()
+        label_font = QtGui.QFont(font)
+        label_font.setBold(True)
+        self.flrig_debug_line = QtWidgets.QLineEdit()
+        self.flrig_debug_line.setReadOnly(True)
+        self.flrig_debug_line.setStyleSheet("color: #00ff00; background: #222;")
+        self.flrig_debug_line.setMinimumHeight(30)
+        self.flrig_debug_line.setFont(font)
+        self.flrig_debug_line.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        # Immer an Zeile 0 einfügen!
+        self.form_layout.insertRow(0, self.translation["flrig_debug"], self.flrig_debug_line)
+        label_item = self.form_layout.itemAt(0, QtWidgets.QFormLayout.LabelRole)
+        if label_item and label_item.widget():
+            label_item.widget().setFont(label_font)
+        self.flrig_debug_line.setText(self.last_flrig_debug)
+
+    def apply_translation(self, translation):
+        self.translation = translation
+        self.setWindowTitle(self.translation["app_title"])
+        # Labels im Formular
+        row = 0
+        if self.flrig_debug_line and self.form_layout.itemAt(row, QtWidgets.QFormLayout.LabelRole):
+            self.form_layout.labelForField(self.flrig_debug_line).setText(self.translation["flrig_debug"])
+            row += 1
+        self.form_layout.labelForField(self.call).setText(self.translation["call"])
+        row += 1
+        # call_tags_widget hat kein Label
+        row += 1
+        self.form_layout.labelForField(self.band).setText(self.translation["band"])
+        self.form_layout.labelForField(self.freq).setText(self.translation["freq"])
+        self.form_layout.labelForField(self.mode).setText(self.translation["mode"])
+        self.form_layout.labelForField(self.rst_sent).setText(self.translation["rst_sent"])
+        self.form_layout.labelForField(self.rst_rcvd).setText(self.translation["rst_rcvd"])
+        self.form_layout.labelForField(self.gridsquare).setText(self.translation["gridsquare"])
+        self.form_layout.labelForField(self.comment).setText(self.translation["comment"])
+        self.form_layout.labelForField(self.name).setText(self.translation["name"])
+        self.form_layout.labelForField(self.qth).setText(self.translation["qth"])
+        self.form_layout.labelForField(self.tx_pwr).setText(self.translation["tx_pwr"])
+        self.form_layout.labelForField(self.country).setText(self.translation["country"])
+        self.form_layout.labelForField(self.operator).setText(self.translation["operator"])
+        self.form_layout.labelForField(self.station_callsign).setText(self.translation["station_callsign"])
+        self.form_layout.labelForField(self.dxcc).setText(self.translation["dxcc"])
+        self.form_layout.labelForField(self.qso_date_display).setText(self.translation["qso_date"])
+        self.form_layout.labelForField(self.time_on_display).setText(self.translation["qso_start"])
+        self.form_layout.labelForField(self.time_off_display).setText(self.translation["qso_end"])
+        # Toolbar und Menüs neu aufbauen
+        self.menuBar().clear()
+        self.create_toolbar_and_menu()
+        # Statusbar
+        self.statusbar.showMessage(self.translation["ready"])
+
     def open_config_dialog(self):
         dlg = ConfigDialog(self, self.config, self.translation)
         if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            old_lang = self.config.get("language", "en")
             self.config = dlg.get_config()
             save_config(self.config)
+            new_lang = self.config.get("language", "en")
+            if new_lang != old_lang:
+                from src.utils import load_translation
+                translation = load_translation(new_lang)
+                self.apply_translation(translation)
             self.station_callsign.setText(self.config.get("station_callsign", ""))
             self.statusbar.showMessage(self.translation["config_saved"])
             self.start_flrig_worker()
-            # Debugfeld sofort sichtbar/unsichtbar machen und Inhalt setzen
-            self.flrig_debug_line.setVisible(self.config.get("show_debug", False))
-            if self.config.get("show_debug", False):
-                self.flrig_debug_line.setText(self.last_flrig_debug)
-            else:
-                self.flrig_debug_line.clear()
+            # Debugfeld entfernen, falls vorhanden (immer Zeile 0 prüfen)
+            if self.form_layout.rowCount() > 0:
+                label_item = self.form_layout.itemAt(0, QtWidgets.QFormLayout.LabelRole)
+                if label_item and label_item.widget() and label_item.widget().text() == self.translation["flrig_debug"]:
+                    self.form_layout.removeRow(0)
+                    self.flrig_debug_line = None  # Referenz löschen
 
+            # Debugfeld ggf. neu einfügen
+            if self.config.get("show_debug", False):
+                font = self.font()
+                label_font = QtGui.QFont(font)
+                label_font.setBold(True)
+                self.flrig_debug_line = QtWidgets.QLineEdit()
+                self.flrig_debug_line.setReadOnly(True)
+                self.flrig_debug_line.setStyleSheet("color: #00ff00; background: #222;")
+                self.flrig_debug_line.setMinimumHeight(30)
+                self.flrig_debug_line.setFont(font)
+                self.flrig_debug_line.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+                self.form_layout.insertRow(self.debug_row_index, self.translation["flrig_debug"], self.flrig_debug_line)
+                # Label fett machen
+                label_item = self.form_layout.itemAt(self.debug_row_index, QtWidgets.QFormLayout.LabelRole)
+                if label_item and label_item.widget():
+                    label_item.widget().setFont(label_font)
+                self.flrig_debug_line.setText(self.last_flrig_debug)
+            
     def load_and_show_callsign_tags(self):
         callsign = self.call.text().strip().upper()
         if not callsign:
@@ -398,8 +481,7 @@ class QSOForm(QtWidgets.QMainWindow):
             return
         tags = []
         try:
-            data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-            tags_file = os.path.join(data_dir, "callsign_tags.json")
+            tags_file = user_data_path("callsign_tags.json")
             if os.path.exists(tags_file):
                 with open(tags_file, "r", encoding="utf-8") as f:
                     data = json.load(f)

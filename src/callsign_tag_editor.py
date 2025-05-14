@@ -1,9 +1,11 @@
 import json
 import os
 from PyQt5 import QtWidgets, QtCore
+from src.utils import user_data_path
+from src.utils import resource_path
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-CALLSIGN_TAGS_FILE = os.path.join(DATA_DIR, "callsign_tags.json")
+DATA_DIR = resource_path("data")
+CALLSIGN_TAGS_FILE = user_data_path("callsign_tags.json")
 
 class CallsignTagEditor(QtWidgets.QDialog):
     def __init__(self, parent=None, translation=None):
@@ -57,6 +59,14 @@ class CallsignTagEditor(QtWidgets.QDialog):
             os.makedirs(DATA_DIR)
 
         self.update_callsign_list()
+
+    def apply_translation(self, translation):
+        self.translation = translation
+        self.setWindowTitle(self.translation.get("callsign_tag_editor_title", "Callsign Tags Editor"))
+        self.callsign_combo.setPlaceholderText(self.translation.get("callsign_select_placeholder", "Select or enter callsign"))
+        self.call_input.setPlaceholderText(self.translation.get("callsign_placeholder", "Enter callsign (e.g. DL1ABC)"))
+        self.new_tag_input.setPlaceholderText(self.translation.get("add_tag_placeholder", "Add new tag"))
+        # Buttons und weitere Texte ggf. aktualisieren
 
     def load_data(self):
         if os.path.exists(CALLSIGN_TAGS_FILE):
