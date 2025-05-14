@@ -79,9 +79,10 @@ MIT License
 
 ### Credits
 
-- PyQt5
-- QRZ.com XML API
-- FLRig by W1HKJ
+- [PyQt5](https://pypi.org/project/PyQt5/)
+- [QRZ.com XML API](https://www.qrz.com/xml/)
+- [FLRig by W1HKJ](https://github.com/w1hkj/flrig)
+- [WLGate by DG4KLU](https://github.com/DG4KLU/WLGate)
 
 ---
 
