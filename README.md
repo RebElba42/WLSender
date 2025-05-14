@@ -56,6 +56,11 @@ python -m src.main
 - Edit your QRZ.com credentials and station information in the config dialog (accessible from the toolbar/menu).
 - FLRig and WLGate server addresses/ports are also configurable.
 
+**Note:**  
+For WLSender to work correctly, both **FLRig** and **WLGate** must be properly installed and running on your system or network.  
+Make sure to enter the correct IP addresses and ports for FLRig and WLGate in the configuration dialog.  
+Otherwise, features such as automatic frequency/mode detection and QSO sending will not function as expected.
+
 ---
 
 ### Logging

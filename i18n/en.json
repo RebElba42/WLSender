@@ -1,5 +1,5 @@
 {
-    "app_title": "Send QSO to WLGate",
+    "app_title": "Send QSO to WLGate manually",
     "config_title": "Configuration",
     "wlgate_ip": "WLGate IP",
     "wlgate_port": "WLGate Port",

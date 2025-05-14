@@ -171,6 +171,9 @@ class QSOForm(QtWidgets.QMainWindow):
         self.flrig_worker.start()
 
     def update_flrig_fields(self, freq, mode, band, debug_msg):
+        # Prüfen, ob FLRig-Daten wirklich gültig sind (Verbindung vorhanden)
+        flrig_connected = bool(freq or mode or band)
+
         def simplify_mode(m):
             m = m.upper()
             if m.startswith("CW"):
@@ -199,24 +202,31 @@ class QSOForm(QtWidgets.QMainWindow):
             except Exception:
                 return str(freq_str)
 
-        self.freq.setText(format_freq(freq) if freq else "")
-        mode_val = simplify_mode(mode) if mode else ""
-        self.mode.setText(mode_val)
-        self.band.setText(band if band else "")
-        self.last_flrig_debug = debug_msg
-        if self.flrig_debug_line:
-            self.flrig_debug_line.setText(debug_msg)
-        # RST Felder vorbelegen (nur überschreiben, wenn leer oder Wert nicht passend)
-        if mode_val == "CW":
-            if self.rst_sent.text() != "599":
-                self.rst_sent.setText("599")
-            if self.rst_rcvd.text() != "599":
-                self.rst_rcvd.setText("599")
-        elif mode_val:
-            if self.rst_sent.text() != "59":
-                self.rst_sent.setText("59")
-            if self.rst_rcvd.text() != "59":
-                self.rst_rcvd.setText("59")
+        # Nur überschreiben, wenn FLRig-Daten vorhanden (Verbindung ok)
+        if flrig_connected:
+            self.freq.setText(format_freq(freq) if freq else "")
+            mode_val = simplify_mode(mode) if mode else ""
+            self.mode.setText(mode_val)
+            self.band.setText(band if band else "")
+            self.last_flrig_debug = debug_msg
+            if self.flrig_debug_line:
+                self.flrig_debug_line.setText(debug_msg)
+            # RST Felder vorbelegen (nur überschreiben, wenn leer oder Wert nicht passend)
+            if mode_val == "CW":
+                if self.rst_sent.text() != "599":
+                    self.rst_sent.setText("599")
+                if self.rst_rcvd.text() != "599":
+                    self.rst_rcvd.setText("599")
+            elif mode_val:
+                if self.rst_sent.text() != "59":
+                    self.rst_sent.setText("59")
+                if self.rst_rcvd.text() != "59":
+                    self.rst_rcvd.setText("59")
+        else:
+            # Nur Debugfeld aktualisieren, keine anderen Felder leeren!
+            self.last_flrig_debug = debug_msg
+            if self.flrig_debug_line:
+                self.flrig_debug_line.setText(debug_msg)
 
     def create_toolbar_and_menu(self):
         send_icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
