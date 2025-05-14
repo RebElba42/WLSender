@@ -55,5 +55,12 @@
     "qrz_error": "QRZ.com-Fehler",
     "status_history": "Status-Historie",
     "copy_to_clipboard": "In Zwischenablage kopieren",
-    "show_debug": "FLRig-Debugfeld anzeigen"
+    "show_debug": "FLRig-Debugfeld anzeigen",
+    "callsign_tag_editor_title": "Rufzeichen-Tags bearbeiten",
+    "callsign_placeholder": "Rufzeichen eingeben (z.B. DL1ABC)",
+    "add_tag_placeholder": "Neuen Tag hinzufügen",
+    "add_tag": "Tag hinzufügen",
+    "remove_selected": "Ausgewählte entfernen",
+    "save": "Speichern",
+    "edit_callsign_tags": "Rufzeichen-Tags bearbeiten"
 }

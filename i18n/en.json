@@ -55,5 +55,12 @@
     "qrz_error": "QRZ.com error",
     "status_history": "Status History",
     "copy_to_clipboard": "Copy to clipboard",
-    "show_debug": "Show FLRig debug field"
+    "show_debug": "Show FLRig debug field",
+    "callsign_tag_editor_title": "Callsign Tags Editor",
+    "callsign_placeholder": "Enter callsign (e.g. DL1ABC)",
+    "add_tag_placeholder": "Add new tag",
+    "add_tag": "Add Tag",
+    "remove_selected": "Remove Selected",
+    "save": "Save",
+    "edit_callsign_tags": "Edit Callsign Tags"
 }

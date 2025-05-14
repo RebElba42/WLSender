@@ -10,6 +10,7 @@
 
 #Local test Scripts
 test.py
+*.sic.*
 
 # Mac/OSX
 .DS_Store

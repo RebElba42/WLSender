@@ -9,8 +9,10 @@ from src.qrz_lookup import lookup_qrz
 from src.config_dialog import ConfigDialog, save_config
 from src.logger import log_error, log_info
 from src.utils import now_utc_str
+from src.callsign_tag_editor import CallsignTagEditor
 import socket
 import os
+import json
 
 class QSOForm(QtWidgets.QMainWindow):
     """
@@ -38,12 +40,12 @@ class QSOForm(QtWidgets.QMainWindow):
         self.setWindowTitle(self.translation["app_title"])
         screen = QtWidgets.QApplication.primaryScreen().availableGeometry()
         width = min(950, screen.width() - 60)
-        height = min(950, screen.height() - 60)
+        height = min(1000, screen.height() - 60)
         font = self.font()
         font.setPointSize(font.pointSize() + 2)  # Schriftgröße moderat erhöhen
         self.setFont(font)
         self.resize(width, height)
-        self.setMinimumSize(800, 750)  # Fenster größer und in der Höhe verstellbar
+        self.setMinimumSize(1000, 750)  # Fenster größer und in der Höhe verstellbar
 
         # --- ScrollArea für das Formular ---
         scroll_area = QtWidgets.QScrollArea()
@@ -63,6 +65,10 @@ class QSOForm(QtWidgets.QMainWindow):
 
         # Felder
         self.call = QtWidgets.QLineEdit()
+        self.call_tags_widget = QtWidgets.QWidget()
+        self.call_tags_layout = QtWidgets.QHBoxLayout(self.call_tags_widget)
+        self.call_tags_layout.setContentsMargins(0, 0, 0, 0)
+        self.call_tags_widget.setVisible(False)
         self.call.editingFinished.connect(self.lookup_qrz_gui)
         self.call.textChanged.connect(self.call_to_upper)
         self.band = QtWidgets.QLineEdit()
@@ -113,6 +119,7 @@ class QSOForm(QtWidgets.QMainWindow):
         # Form Layout (Labels aus translation)
         self.form_layout.addRow(self.translation["flrig_debug"], self.flrig_debug_line)
         self.form_layout.addRow(self.translation["call"], self.call)
+        self.form_layout.addRow("", self.call_tags_widget)  
         self.form_layout.addRow(self.translation["band"], self.band)
         self.form_layout.addRow(self.translation["freq"], self.freq)
         self.form_layout.addRow(self.translation["mode"], self.mode)
@@ -153,6 +160,20 @@ class QSOForm(QtWidgets.QMainWindow):
         elif mode_val:
             self.rst_sent.setText("59")
             self.rst_rcvd.setText("59")
+
+    def show_callsign_tags(self, tags):
+        # Alte Tags entfernen
+        while self.call_tags_layout.count():
+            item = self.call_tags_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        # Neue Tags als Bubble-Labels hinzufügen
+        for tag in tags:
+            lbl = QtWidgets.QLabel(tag)
+            lbl.setStyleSheet("background:#ffffff; color:#000000; border-radius:8px; padding:2px 8px; margin-right:4px;")
+            self.call_tags_layout.addWidget(lbl)
+        self.call_tags_widget.setVisible(bool(tags))
 
     def call_to_upper(self):
         text = self.call.text()
@@ -233,6 +254,7 @@ class QSOForm(QtWidgets.QMainWindow):
         reset_icon = self.style().standardIcon(QtWidgets.QStyle.SP_BrowserReload)
         exit_icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCloseButton)
         config_icon = self.style().standardIcon(QtWidgets.QStyle.SP_FileDialogDetailedView)
+        tag_icon = self.style().standardIcon(QtWidgets.QStyle.SP_FileDialogInfoView)
 
         toolbar = self.addToolBar(self.translation["actions"])
         toolbar.setMovable(False)
@@ -244,9 +266,13 @@ class QSOForm(QtWidgets.QMainWindow):
         exit_action.triggered.connect(self.close)
         config_action = QtWidgets.QAction(config_icon, self.translation["config"], self)
         config_action.triggered.connect(self.open_config_dialog)
+        tag_action = QtWidgets.QAction(tag_icon, self.translation.get("edit_callsign_tags", "Edit Callsign Tags"), self)
+        tag_action.triggered.connect(self.open_callsign_tag_editor)
+
         toolbar.addAction(send_action)
         toolbar.addAction(reset_action)
         toolbar.addAction(config_action)
+        toolbar.addAction(tag_action)
         toolbar.addAction(exit_action)
 
         menubar = self.menuBar()
@@ -254,6 +280,7 @@ class QSOForm(QtWidgets.QMainWindow):
         file_menu.addAction(send_action)
         file_menu.addAction(reset_action)
         file_menu.addAction(config_action)
+        file_menu.addAction(tag_action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
 
@@ -277,6 +304,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.station_callsign.setText(self.config.get("station_callsign", ""))
         self.update_datetime()
         self.statusbar.showMessage(self.translation["fields_reset"])
+        self.show_callsign_tags([]) 
 
     def adif_freq_value(self):
         # Wandelt "7.012.620" in "7.01262" um
@@ -363,10 +391,33 @@ class QSOForm(QtWidgets.QMainWindow):
             else:
                 self.flrig_debug_line.clear()
 
+    def load_and_show_callsign_tags(self):
+        callsign = self.call.text().strip().upper()
+        if not callsign:
+            self.show_callsign_tags([])
+            return
+        tags = []
+        try:
+            data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+            tags_file = os.path.join(data_dir, "callsign_tags.json")
+            if os.path.exists(tags_file):
+                with open(tags_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                tags = data.get(callsign, [])
+        except Exception as e:
+            log_error(f"Error loading callsign tags: {e}")
+        self.show_callsign_tags(tags)
+                
+    def open_callsign_tag_editor(self):
+        dlg = CallsignTagEditor(self, translation=self.translation)
+        dlg.exec_()
+        
     def lookup_qrz_gui(self):
         call = self.call.text().strip()
         if not call or not self.config.get("qrz_username") or not self.config.get("qrz_password"):
             self.statusbar.showMessage(self.translation["qrz_skipped"])
+            self.show_callsign_tags([]) 
+            
             return
         self.statusbar.showMessage(self.translation["qrz_query"].format(call=call))
         data, self.qrz_session_key = lookup_qrz(
@@ -384,6 +435,7 @@ class QSOForm(QtWidgets.QMainWindow):
         else:
             self.statusbar.showMessage(self.translation.get("qrz_not_found", "Rufzeichen nicht bei QRZ gefunden"))
         self.comment.setFocus()
+        self.load_and_show_callsign_tags()
         
     def on_status_message_changed(self, msg):
         timestamp = now_utc_str()
