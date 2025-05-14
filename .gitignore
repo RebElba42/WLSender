@@ -5,6 +5,9 @@
 # Vagrant
 .vagrant/
 
+#Local Configs
+*_config.json
+
 # Mac/OSX
 .DS_Store
 

@@ -1,6 +1,7 @@
 import sys
 import os
 from PyQt5 import QtWidgets, QtGui
+import qdarkstyle
 from src.config_dialog import load_config
 from src.utils import load_translation
 from src.qso_form import QSOForm
@@ -14,6 +15,7 @@ def resource_path(relative_path):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
+    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     splash_pix = QtGui.QPixmap(resource_path("icons/wlgate.png"))
     splash = QtWidgets.QSplashScreen(splash_pix)
     splash.show()

@@ -42,17 +42,22 @@ def save_config(cfg):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2)
 
+
 class ConfigDialog(QtWidgets.QDialog):
     """
-    Dialog for editing application configuration, including language selection.
+    Dialog for editing application configuration, including language selection and debug field.
     """
     def __init__(self, parent=None, config=None, translation=None):
         super().__init__(parent)
         self.config = config or load_config()
         self.translation = translation or load_translation(self.config.get("language", "en"))
         self.setWindowTitle(self.translation["config_title"])
+        self.setFixedSize(420, 360)
+        font = self.font()
+        font.setPointSize(font.pointSize() + 2)  # Schriftgröße deutlich erhöhen
+        self.setFont(font)
         self.setModal(True)
-        self.resize(400, 350)
+        self.resize(420, 360)
         layout = QtWidgets.QFormLayout(self)
 
         self.wlgate_host = QtWidgets.QLineEdit(self.config.get("wlgate_host", "127.0.0.1"))
@@ -68,12 +73,26 @@ class ConfigDialog(QtWidgets.QDialog):
         self.flrig_port.setRange(1, 65535)
         self.flrig_port.setValue(self.config.get("flrig_port", 12345))
 
+        # Höhe und Schriftgröße für alle Felder setzen
+        for widget in [self.wlgate_host, self.qrz_username, self.qrz_password,
+                       self.station_callsign, self.flrig_host]:
+            widget.setMinimumHeight(32)
+            widget.setFont(font)
+        self.wlgate_port.setFont(font)
+        self.flrig_port.setFont(font)
+
+        # Debug-Feld Checkbox
+        self.debug_checkbox = QtWidgets.QCheckBox(self.translation.get("show_debug", "Show FLRig debug field"))
+        self.debug_checkbox.setChecked(self.config.get("show_debug", False))
+        self.debug_checkbox.setFont(font)
+
         # Language selection
         self.language_combo = QtWidgets.QComboBox()
         for code, label_key in LANGUAGES:
             self.language_combo.addItem(self.translation[label_key], code)
         idx = [code for code, _ in LANGUAGES].index(self.config.get("language", "en"))
         self.language_combo.setCurrentIndex(idx)
+        self.language_combo.setFont(font)
 
         layout.addRow(self.translation["wlgate_ip"], self.wlgate_host)
         layout.addRow(self.translation["wlgate_port"], self.wlgate_port)
@@ -82,6 +101,7 @@ class ConfigDialog(QtWidgets.QDialog):
         layout.addRow(self.translation["station_callsign"], self.station_callsign)
         layout.addRow(self.translation["flrig_host"], self.flrig_host)
         layout.addRow(self.translation["flrig_port"], self.flrig_port)
+        layout.addRow(self.translation.get("show_debug", "Show FLRig debug field"), self.debug_checkbox)
         layout.addRow(self.translation["language"], self.language_combo)
 
         btn_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
@@ -103,5 +123,6 @@ class ConfigDialog(QtWidgets.QDialog):
             "station_callsign": self.station_callsign.text().strip(),
             "flrig_host": self.flrig_host.text().strip(),
             "flrig_port": self.flrig_port.value(),
+            "show_debug": self.debug_checkbox.isChecked(),
             "language": self.language_combo.currentData()
         }
