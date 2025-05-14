@@ -24,7 +24,7 @@
 
 1. **Clone the repository:**
     ```sh
-    git clone https://github.com/yourusername/wlsender.git
+    git clone https://github.com/RebElba42/WLSender.git
     cd wlsender
     ```
 
@@ -80,9 +80,9 @@ MIT License
 ### Credits
 
 - [PyQt5](https://pypi.org/project/PyQt5/)
-- [QRZ.com XML API](https://www.qrz.com/xml/)
+- QRZ.com XML API
 - [FLRig by W1HKJ](https://github.com/w1hkj/flrig)
-- [WLGate by DG4KLU](https://github.com/DG4KLU/WLGate)
+- [WLGate by DG4KLU](https://github.com/wavelog/WaveLogGate)
 
 ---
 
