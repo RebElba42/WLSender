@@ -249,7 +249,6 @@ class QSOForm(QtWidgets.QMainWindow):
                 if self.rst_rcvd.text() != "59":
                     self.rst_rcvd.setText("59")
         else:
-            # Nur Debugfeld aktualisieren, keine anderen Felder leeren!
             self.last_flrig_debug = debug_msg
             if self.flrig_debug_line:
                 self.flrig_debug_line.setText(debug_msg)
@@ -296,7 +295,7 @@ class QSOForm(QtWidgets.QMainWindow):
         now_utc = datetime.now(timezone.utc)
         self.qso_date_display.setText(now.strftime("%d.%m.%Y"))
         self.time_on_display.setText(now_utc.strftime("%H:%M:%S"))
-        # QSO-Ende = QSO-Start + 20 Sekunden
+        # QSO end = QSO start + 20 seconds
         time_off_utc = now_utc + timedelta(seconds=20)
         self.time_off_display.setText(time_off_utc.strftime("%H:%M:%S"))
         self.qso_date_adif = now_utc.strftime("%Y%m%d")
@@ -393,7 +392,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.flrig_debug_line.setMinimumHeight(30)
         self.flrig_debug_line.setFont(font)
         self.flrig_debug_line.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-        # Immer an Zeile 0 einfügen!
+        # Always insert at row 0!
         self.form_layout.insertRow(0, self.translation["flrig_debug"], self.flrig_debug_line)
         label_item = self.form_layout.itemAt(0, QtWidgets.QFormLayout.LabelRole)
         if label_item and label_item.widget():
@@ -403,14 +402,14 @@ class QSOForm(QtWidgets.QMainWindow):
     def apply_translation(self, translation):
         self.translation = translation
         self.setWindowTitle(self.translation["app_title"])
-        # Labels im Formular
+        # Labels in the form
         row = 0
         if self.flrig_debug_line and self.form_layout.itemAt(row, QtWidgets.QFormLayout.LabelRole):
             self.form_layout.labelForField(self.flrig_debug_line).setText(self.translation["flrig_debug"])
             row += 1
         self.form_layout.labelForField(self.call).setText(self.translation["call"])
         row += 1
-        # call_tags_widget hat kein Label
+        
         row += 1
         self.form_layout.labelForField(self.band).setText(self.translation["band"])
         self.form_layout.labelForField(self.freq).setText(self.translation["freq"])
@@ -429,10 +428,10 @@ class QSOForm(QtWidgets.QMainWindow):
         self.form_layout.labelForField(self.qso_date_display).setText(self.translation["qso_date"])
         self.form_layout.labelForField(self.time_on_display).setText(self.translation["qso_start"])
         self.form_layout.labelForField(self.time_off_display).setText(self.translation["qso_end"])
-        # Toolbar und Menüs neu aufbauen
+        # Rebuild toolbar and menus
         self.menuBar().clear()
         self.create_toolbar_and_menu()
-        # Statusbar
+        # Status bar
         self.statusbar.showMessage(self.translation["ready"])
 
     def open_config_dialog(self):

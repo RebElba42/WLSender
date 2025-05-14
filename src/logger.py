@@ -7,9 +7,9 @@ import logging
 
 LOGFILE = "wlsender.log"
 
-logging.lastResort = None  # Notfall-Handler deaktivieren
+logging.lastResort = None  # Disable emergency handler
 
-# Root-Logger komplett stummschalten mit echtem NullHandler
+# Completely silence root logger with real NullHandler
 class NullHandler(logging.Handler):
     def emit(self, record):
         pass
@@ -21,7 +21,7 @@ root_logger.addHandler(NullHandler())
 root_logger.setLevel(logging.CRITICAL + 1)
 root_logger.propagate = False
 
-# Auch noisy Bibliotheken stummschalten
+# Also silence noisy libraries
 for noisy_logger in ["requests", "urllib3", "chardet", "charset_normalizer"]:
     l = logging.getLogger(noisy_logger)
     l.handlers.clear()
@@ -29,19 +29,19 @@ for noisy_logger in ["requests", "urllib3", "chardet", "charset_normalizer"]:
     l.setLevel(logging.CRITICAL + 1)
     l.propagate = False
 
-# Eigener Logger für die Anwendung
+# Custom logger for the application
 logger = logging.getLogger("wlsender")
 logger.setLevel(logging.INFO)
 logger.propagate = False  # WICHTIG!
 
-# File-Handler für Fehler und Infos
+# File handler for errors and info
 file_handler = logging.FileHandler(LOGFILE, encoding="utf-8")
 file_handler.setLevel(logging.INFO)
 file_formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
-# KEIN StreamHandler für Konsole anhängen!
+# DO NOT attach StreamHandler for console!
 
 def log_error(msg):
     """

@@ -54,7 +54,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.setWindowTitle(self.translation["config_title"])
         self.setFixedSize(420, 360)
         font = self.font()
-        font.setPointSize(font.pointSize() + 2)  # Schriftgröße deutlich erhöhen
+        font.setPointSize(font.pointSize() + 2)  # Increase font size
         self.setFont(font)
         self.setModal(True)
         self.resize(420, 360)
@@ -73,7 +73,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.flrig_port.setRange(1, 65535)
         self.flrig_port.setValue(self.config.get("flrig_port", 12345))
 
-        # Höhe und Schriftgröße für alle Felder setzen
+        # Set font for all widgets
         for widget in [self.wlgate_host, self.qrz_username, self.qrz_password,
                        self.station_callsign, self.flrig_host]:
             widget.setMinimumHeight(32)
@@ -81,7 +81,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.wlgate_port.setFont(font)
         self.flrig_port.setFont(font)
 
-        # Debug-Feld Checkbox
+        
         self.debug_checkbox = QtWidgets.QCheckBox(self.translation.get("show_debug", "Show FLRig debug field"))
         self.debug_checkbox.setChecked(self.config.get("show_debug", False))
         self.debug_checkbox.setFont(font)

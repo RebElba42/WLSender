@@ -18,7 +18,7 @@ class CallsignTagEditor(QtWidgets.QDialog):
 
         layout = QtWidgets.QVBoxLayout(self)
 
-        # Rufzeichen-Liste (ComboBox)
+        # Callsign list (ComboBox)
         self.callsign_combo = QtWidgets.QComboBox()
         self.callsign_combo.setEditable(True)
         self.callsign_combo.setInsertPolicy(QtWidgets.QComboBox.NoInsert)
@@ -26,18 +26,18 @@ class CallsignTagEditor(QtWidgets.QDialog):
         self.callsign_combo.currentTextChanged.connect(self.on_callsign_selected)
         layout.addWidget(self.callsign_combo)
 
-        # Rufzeichen-Eingabe (synchronisiert mit ComboBox)
+        # Callsign input (synchronized with ComboBox)
         self.call_input = self.callsign_combo.lineEdit()
         self.call_input.setPlaceholderText(self.translation.get("callsign_placeholder", "Enter callsign (e.g. DL1ABC)"))
         self.call_input.editingFinished.connect(self.load_tags_for_call)
-        # Nur Großbuchstaben erlauben:
+        # Allow only uppercase letters:
         self.call_input.textChanged.connect(lambda text: self.call_input.setText(text.upper()))
 
-        # Tag-Liste
+        # Tag list
         self.tag_list = QtWidgets.QListWidget()
         layout.addWidget(self.tag_list)
 
-        # Tag hinzufügen/entfernen
+        # Add/remove tag
         tag_input_layout = QtWidgets.QHBoxLayout()
         self.new_tag_input = QtWidgets.QLineEdit()
         self.new_tag_input.setPlaceholderText(self.translation.get("add_tag_placeholder", "Add new tag"))
@@ -50,7 +50,7 @@ class CallsignTagEditor(QtWidgets.QDialog):
         tag_input_layout.addWidget(btn_remove)
         layout.addLayout(tag_input_layout)
 
-        # Speichern & Schließen
+        # Save & Close
         btn_save = QtWidgets.QPushButton(self.translation.get("save", "Save"))
         btn_save.clicked.connect(self.save_and_close)
         layout.addWidget(btn_save)
@@ -66,7 +66,7 @@ class CallsignTagEditor(QtWidgets.QDialog):
         self.callsign_combo.setPlaceholderText(self.translation.get("callsign_select_placeholder", "Select or enter callsign"))
         self.call_input.setPlaceholderText(self.translation.get("callsign_placeholder", "Enter callsign (e.g. DL1ABC)"))
         self.new_tag_input.setPlaceholderText(self.translation.get("add_tag_placeholder", "Add new tag"))
-        # Buttons und weitere Texte ggf. aktualisieren
+       
 
     def load_data(self):
         if os.path.exists(CALLSIGN_TAGS_FILE):
@@ -83,7 +83,7 @@ class CallsignTagEditor(QtWidgets.QDialog):
 
     def on_callsign_selected(self, callsign):
         self.call_input.setText(callsign)
-        self.load_tags_for_call()  # Hier wird die Tag-Liste aktualisiert (geleert oder gefüllt)
+        self.load_tags_for_call() # Load tags for the selected callsign
 
     def load_tags_for_call(self):
         call = self.call_input.text().strip().upper()

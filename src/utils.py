@@ -21,23 +21,23 @@ def now_utc_str():
 
 def resource_path(relative_path):
     """
-    Gibt den Pfad zu einer Resource zurück, egal ob im PyInstaller-Bundle, als EXE oder im Entwicklermodus.
+   Returns the path to a resource, regardless of whether running in a PyInstaller bundle, as an EXE, or in development mode.
     """
     if hasattr(sys, '_MEIPASS'):
-        # PyInstaller-EXE
+        # PyInstaller EXE
         return os.path.join(sys._MEIPASS, relative_path)
-    # Entwicklermodus: Basis ist das Projektverzeichnis (eine Ebene über src)
+     # Development mode: base is the project directory (one level above src)
     base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     return os.path.join(base, relative_path)
 
 def user_data_path(filename):
     """
-    Gibt den Pfad zu einer Nutzerdaten-Datei im data-Verzeichnis neben der EXE (oder im Projektverzeichnis) zurück.
+    Returns the path to a user data file in the data directory next to the EXE (or in the project directory in development mode).
     """
     if hasattr(sys, '_MEIPASS'):
         # PyInstaller-EXE
         base = os.path.dirname(sys.argv[0])
     else:
-        # Entwicklermodus: Basis ist das Projektverzeichnis (eine Ebene über src)
+        # Development mode: base is the project directory (one level above src)
         base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     return os.path.join(base, "data", filename)
