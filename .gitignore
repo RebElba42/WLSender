@@ -8,6 +8,9 @@
 #Local Configs
 *_config.json
 
+#Local test Scripts
+test.py
+
 # Mac/OSX
 .DS_Store
 
