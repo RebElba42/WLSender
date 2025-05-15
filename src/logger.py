@@ -12,6 +12,9 @@ logging.lastResort = None  # Disable emergency handler
 
 # Completely silence root logger with real NullHandler
 class NullHandler(logging.Handler):
+    """
+    Null handler to silence the root logger.
+    """
     def emit(self, record):
         pass
 

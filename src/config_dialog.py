@@ -14,6 +14,9 @@ CONFIG_FILE = user_data_path("wlsender_config.json")
 LANGUAGES = [("en", "language_en"), ("de", "language_de")]
 
 def get_crypto_key():
+    """
+    Retrieve or generate the encryption key for password encryption.
+    """
     if not os.path.exists(KEY_FILE):
         key = Fernet.generate_key()
         with open(KEY_FILE, "wb") as f:
@@ -24,11 +27,17 @@ def get_crypto_key():
     return key
 
 def encrypt_password(password):
+    """
+    Encrypt the given password using the crypto key.
+    """
     key = get_crypto_key()
     f = Fernet(key)
     return f.encrypt(password.encode("utf-8")).decode("utf-8")
 
 def decrypt_password(token):
+    """
+    Decrypt the given encrypted password token using the crypto key.
+    """
     key = get_crypto_key()
     f = Fernet(key)
     try:
@@ -50,7 +59,7 @@ def load_config():
             cfg["flrig_port"] = 12345
         if "language" not in cfg:
             cfg["language"] = "en"
-        # Passwort entschlüsseln, falls vorhanden
+        # Decrypt password if present
         if cfg.get("qrz_password"):
             try:
                 cfg["qrz_password"] = decrypt_password(cfg["qrz_password"])
@@ -81,6 +90,9 @@ class ConfigDialog(QtWidgets.QDialog):
     Dialog for editing application configuration, including language selection and debug field.
     """
     def __init__(self, parent=None, config=None, translation=None):
+        """
+        Initialize the configuration dialog.
+        """
         super().__init__(parent)
         self.config = config or load_config()
         self.translation = translation or load_translation(self.config.get("language", "en"))

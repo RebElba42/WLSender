@@ -8,7 +8,13 @@ DATA_DIR = resource_path("data")
 CALLSIGN_TAGS_FILE = user_data_path("callsign_tags.json")
 
 class CallsignTagEditor(QtWidgets.QDialog):
+    """
+    Dialog for editing callsign tags.
+    """
     def __init__(self, parent=None, translation=None):
+        """
+        Initialize the callsign tag editor dialog.
+        """
         super().__init__(parent)
         self.translation = translation or {}
         self.setWindowTitle(self.translation.get("callsign_tag_editor_title", "Callsign Tags Editor"))
@@ -61,6 +67,9 @@ class CallsignTagEditor(QtWidgets.QDialog):
         self.update_callsign_list()
 
     def apply_translation(self, translation):
+        """
+        Apply new translations to the dialog.
+        """
         self.translation = translation
         self.setWindowTitle(self.translation.get("callsign_tag_editor_title", "Callsign Tags Editor"))
         self.callsign_combo.setPlaceholderText(self.translation.get("callsign_select_placeholder", "Select or enter callsign"))
@@ -69,6 +78,9 @@ class CallsignTagEditor(QtWidgets.QDialog):
        
 
     def load_data(self):
+        """
+        Load callsign tag data from file.
+        """
         if os.path.exists(CALLSIGN_TAGS_FILE):
             with open(CALLSIGN_TAGS_FILE, "r", encoding="utf-8") as f:
                 self.data = json.load(f)
@@ -76,22 +88,34 @@ class CallsignTagEditor(QtWidgets.QDialog):
             self.data = {}
 
     def update_callsign_list(self):
+        """
+        Update the callsign combo box with all available callsigns.
+        """
         self.callsign_combo.blockSignals(True)
         self.callsign_combo.clear()
         self.callsign_combo.addItems(sorted(self.data.keys()))
         self.callsign_combo.blockSignals(False)
 
     def on_callsign_selected(self, callsign):
+        """
+        Handle selection of a callsign from the combo box.
+        """
         self.call_input.setText(callsign)
         self.load_tags_for_call() # Load tags for the selected callsign
 
     def load_tags_for_call(self):
+        """
+        Load tags for the currently selected callsign.
+        """
         call = self.call_input.text().strip().upper()
         self.tag_list.clear()
         if call and call in self.data:
             self.tag_list.addItems(self.data[call])
 
     def add_tag(self):
+        """
+        Add a new tag to the selected callsign.
+        """
         call = self.call_input.text().strip().upper()
         tag = self.new_tag_input.text().strip()
         if not call or not tag:
@@ -111,6 +135,9 @@ class CallsignTagEditor(QtWidgets.QDialog):
         self.new_tag_input.clear()
 
     def remove_selected_tag(self):
+        """
+        Remove the selected tag(s) from the current callsign.
+        """
         call = self.call_input.text().strip().upper()
         selected = self.tag_list.selectedItems()
         if not call or not selected:
@@ -124,6 +151,9 @@ class CallsignTagEditor(QtWidgets.QDialog):
         self.update_callsign_list()
         
     def save_and_close(self):
+        """
+        Save the tag data to file and close the dialog.
+        """
         with open(CALLSIGN_TAGS_FILE, "w", encoding="utf-8") as f:
             json.dump(self.data, f, indent=2, ensure_ascii=False)
         self.accept()

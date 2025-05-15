@@ -21,6 +21,9 @@ class QSOForm(QtWidgets.QMainWindow):
     Main window for QSO entry and sending.
     """
     def __init__(self, config, translation):
+        """
+        Initialize the main QSO form window.
+        """
         super().__init__()
         self.config = config
         self.translation = translation
@@ -40,17 +43,20 @@ class QSOForm(QtWidgets.QMainWindow):
         self.call.setFocus() # Set focus to the call sign field
 
     def init_ui(self):
+        """
+        Initialize the user interface.
+        """
         self.setWindowTitle(self.translation["app_title"])
         screen = QtWidgets.QApplication.primaryScreen().availableGeometry()
         width = min(950, screen.width() - 60)
         height = min(1000, screen.height() - 60)
         font = self.font()
-        font.setPointSize(font.pointSize() + 2)  # Schriftgröße moderat erhöhen
+        font.setPointSize(font.pointSize() + 2)  
         self.setFont(font)
         self.resize(width, height)
-        self.setMinimumSize(1000, 750)  # Fenster größer und in der Höhe verstellbar
+        self.setMinimumSize(1000, 750) 
 
-        # --- ScrollArea für das Formular ---
+        # --- ScrollArea ---
         scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
         central_widget = QtWidgets.QWidget()
@@ -66,7 +72,7 @@ class QSOForm(QtWidgets.QMainWindow):
         main_layout.addLayout(self.form_layout)
         main_layout.addStretch(1)
 
-        # Felder
+        # Fields
         self.call = QtWidgets.QLineEdit()
         self.call_tags_widget = QtWidgets.QWidget()
         self.call_tags_layout = QtWidgets.QHBoxLayout(self.call_tags_widget)
@@ -100,7 +106,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.time_on_adif = ""
         self.time_off_adif = ""
 
-        # Debug-Feld (sichtbar/nicht sichtbar) - wie die anderen Felder behandeln
+        # Debug field (visible/invisible) - treat like other fields
         self.flrig_debug_line = QtWidgets.QLineEdit()
         self.flrig_debug_line.setReadOnly(True)
         self.flrig_debug_line.setStyleSheet("color: #00ff00; background: #222;")
@@ -109,7 +115,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.flrig_debug_line.setFont(font)
         self.flrig_debug_line.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
-        # Höhe und Schriftgröße für alle Felder setzen
+        # Set height and font size for all fields
         for widget in [self.call, self.band, self.freq, self.mode, self.rst_sent, self.rst_rcvd,
                     self.gridsquare, self.comment, self.name, self.qth, self.tx_pwr,
                     self.country, self.operator, self.station_callsign, self.dxcc,
@@ -119,7 +125,7 @@ class QSOForm(QtWidgets.QMainWindow):
             widget.setFont(font)
             widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
-        # Form Layout (Labels aus translation)
+        # Form layout (labels from translation)
         self.flrig_debug_line = None
         self.debug_row_index = self.form_layout.rowCount()
         if self.config.get("show_debug", False):
@@ -144,7 +150,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.form_layout.addRow(self.translation["qso_start"], self.time_on_display)
         self.form_layout.addRow(self.translation["qso_end"], self.time_off_display)
 
-        # Labels fett machen (nach dem Hinzufügen der Felder!)
+        # Make labels bold (after adding the fields!)
         label_font = QtGui.QFont(font)
         label_font.setBold(True)
         for i in range(self.form_layout.rowCount()):
@@ -159,6 +165,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.statusbar.mousePressEvent = self.show_status_history
 
     def update_rst_fields(self):
+        
         mode_val = self.mode.text().strip().upper()
         if mode_val.startswith("CW"):
             self.rst_sent.setText("599")
@@ -168,13 +175,15 @@ class QSOForm(QtWidgets.QMainWindow):
             self.rst_rcvd.setText("59")
 
     def show_callsign_tags(self, tags):
-        # Alte Tags entfernen
+        """
+        Show tags as bubbles next to the callsign field.
+        """
         while self.call_tags_layout.count():
             item = self.call_tags_layout.takeAt(0)
             widget = item.widget()
             if widget:
                 widget.deleteLater()
-        # Neue Tags als Bubble-Labels hinzufügen
+        # add new tags as bubble
         for tag in tags:
             lbl = QtWidgets.QLabel(tag)
             lbl.setStyleSheet("background:#ffffff; color:#000000; border-radius:8px; padding:2px 8px; margin-right:4px;")
@@ -182,6 +191,9 @@ class QSOForm(QtWidgets.QMainWindow):
         self.call_tags_widget.setVisible(bool(tags))
 
     def call_to_upper(self):
+        """
+        Convert the callsign input to uppercase.
+        """
         text = self.call.text()
         if text != text.upper():
             cursor_pos = self.call.cursorPosition()
@@ -189,6 +201,9 @@ class QSOForm(QtWidgets.QMainWindow):
             self.call.setCursorPosition(cursor_pos)
 
     def start_flrig_worker(self):
+        """
+        Start or restart the FLRig worker thread.
+        """
         if self.flrig_worker:
             self.flrig_worker.running = False
             self.flrig_worker.wait()
@@ -198,9 +213,12 @@ class QSOForm(QtWidgets.QMainWindow):
         self.flrig_worker.start()
 
     def update_flrig_fields(self, freq, mode, band, debug_msg):
-        # Prüfen, ob FLRig-Daten wirklich gültig sind (Verbindung vorhanden)
+        """
+        Update form fields with data from FLRig.
+        """
         flrig_connected = bool(freq or mode or band)
-
+        
+        # Set mode to simple modes. From CW-L to CW etc.
         def simplify_mode(m):
             m = m.upper()
             if m.startswith("CW"):
@@ -214,10 +232,13 @@ class QSOForm(QtWidgets.QMainWindow):
             return m
 
         def format_freq(freq_str):
+            """
+            Formats Freqency coming from FLRig.
+            """
             try:
                 s = str(freq_str).replace(",", ".")
                 freq_val = float(s)
-                # Wenn Wert > 1_000_000, dann ist es Hz, sonst MHz
+                # if value > 1_000_000, it is in Hz, otherwise MHz
                 if freq_val > 1_000_000:
                     hz = int(freq_val)
                 else:
@@ -230,19 +251,19 @@ class QSOForm(QtWidgets.QMainWindow):
                 return str(freq_str)
 
         if flrig_connected:
-            # Frequenz immer überschreiben, wenn unterschiedlich
+            # Frequency always override if different
             formatted_freq = format_freq(freq) if freq else ""
             if self.freq.text().strip() != formatted_freq:
                 self.freq.setText(formatted_freq)
 
-            # Mode immer überschreiben, wenn unterschiedlich
+            # Mode  always override if different
             mode_val = simplify_mode(mode) if mode else ""
             if self.mode.text().strip().upper() != mode_val:
                 self.mode.setText(mode_val)
             else:
                 mode_val = self.mode.text().strip().upper()
 
-            # Band immer überschreiben, wenn unterschiedlich
+            # Band  always override if different
             band_val = band if band else ""
             if self.band.text().strip() != band_val:
                 self.band.setText(band_val)
@@ -250,7 +271,7 @@ class QSOForm(QtWidgets.QMainWindow):
             self.last_flrig_debug = debug_msg
             if self.flrig_debug_line:
                 self.flrig_debug_line.setText(debug_msg)
-            # RST Felder vorbelegen (nur wenn leer)
+            # PReload RST fields (only if empty)
             if mode_val == "CW":
                 if self.rst_sent.text().strip() == "":
                     self.rst_sent.setText("599")
@@ -267,6 +288,9 @@ class QSOForm(QtWidgets.QMainWindow):
                 self.flrig_debug_line.setText(debug_msg)
 
     def create_toolbar_and_menu(self):
+        """
+        Create the toolbar and menu bar.
+        """
         for tb in self.findChildren(QtWidgets.QToolBar):
             self.removeToolBar(tb)
         send_icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
@@ -304,6 +328,9 @@ class QSOForm(QtWidgets.QMainWindow):
         file_menu.addAction(exit_action)
 
     def update_datetime(self):
+        """
+        Update the date and time fields.
+        """
         now = datetime.now()
         now_utc = datetime.now(timezone.utc)
         self.qso_date_display.setText(now.strftime("%d.%m.%Y"))
@@ -316,6 +343,9 @@ class QSOForm(QtWidgets.QMainWindow):
         self.time_off_adif = time_off_utc.strftime("%H%M%S")
 
     def reset_fields(self):
+        """
+        Reset all input fields to their default state.
+        """
         for widget in [self.call, self.band, self.freq, self.mode, self.rst_sent, self.rst_rcvd,
                        self.gridsquare, self.comment, self.name, self.qth, self.tx_pwr,
                        self.country, self.operator, self.dxcc]:
@@ -329,13 +359,19 @@ class QSOForm(QtWidgets.QMainWindow):
             self.flrig_worker.poll_now()
             
     def adif_freq_value(self):
-        # Wandelt "7.012.620" in "7.01262" um
+        """
+        Convert frequency to ADIF format.
+        """
+        # Converts "7.012.620" to "7.01262"
         freq_parts = self.freq.text().split(".")
         if len(freq_parts) == 3:
             return f"{freq_parts[0]}.{freq_parts[1]}{freq_parts[2]}"
         return self.freq.text().replace(",", ".")  # Fallback
 
     def send_qso(self):
+        """
+        Send the QSO data to WLGate via UDP.
+        """
         self.statusbar.showMessage(self.translation["sending_qso"])
         if not self.call.text().strip():
             QtWidgets.QMessageBox.warning(self, self.translation["error"], self.translation["call_required"])
@@ -360,6 +396,9 @@ class QSOForm(QtWidgets.QMainWindow):
 
 
         def adif_field(name, value):
+            """
+           Build ADIF field name value pair.
+            """
             value = value.strip()
             return f"<{name}:{len(value)}>{value}" if value else ""
 
@@ -402,6 +441,9 @@ class QSOForm(QtWidgets.QMainWindow):
             self.flrig_worker.poll_now()
             
     def add_flrig_debug_field(self):
+        """
+        Add the FLRig debug field to the form.
+        """
         font = self.font()
         label_font = QtGui.QFont(font)
         label_font.setBold(True)
@@ -419,6 +461,9 @@ class QSOForm(QtWidgets.QMainWindow):
         self.flrig_debug_line.setText(self.last_flrig_debug)
 
     def apply_translation(self, translation):
+        """
+        Apply a new translation to all labels and UI elements.
+        """
         self.translation = translation
         self.setWindowTitle(self.translation["app_title"])
         # Labels in the form
@@ -454,6 +499,9 @@ class QSOForm(QtWidgets.QMainWindow):
         self.statusbar.showMessage(self.translation["ready"])
 
     def open_config_dialog(self):
+        """
+        Open the configuration dialog and apply changes if accepted.
+        """       
         dlg = ConfigDialog(self, self.config, self.translation)
         if dlg.exec_() == QtWidgets.QDialog.Accepted:
             old_lang = self.config.get("language", "en")
@@ -468,14 +516,14 @@ class QSOForm(QtWidgets.QMainWindow):
             self.station_callsign.setText(self.config.get("station_callsign", ""))
             self.statusbar.showMessage(self.translation["config_saved"])
             self.start_flrig_worker()
-            # Debugfeld entfernen, falls vorhanden (immer Zeile 0 prüfen)
+            # remove Debugfield, if exist
             if self.form_layout.rowCount() > 0:
                 label_item = self.form_layout.itemAt(0, QtWidgets.QFormLayout.LabelRole)
                 if label_item and label_item.widget() and label_item.widget().text() == self.translation["flrig_debug"]:
                     self.form_layout.removeRow(0)
-                    self.flrig_debug_line = None  # Referenz löschen
+                    self.flrig_debug_line = None  # delete reference 
 
-            # Debugfeld ggf. neu einfügen
+            # Add new debug field
             if self.config.get("show_debug", False):
                 font = self.font()
                 label_font = QtGui.QFont(font)
@@ -487,13 +535,16 @@ class QSOForm(QtWidgets.QMainWindow):
                 self.flrig_debug_line.setFont(font)
                 self.flrig_debug_line.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
                 self.form_layout.insertRow(self.debug_row_index, self.translation["flrig_debug"], self.flrig_debug_line)
-                # Label fett machen
+                # Label set bold
                 label_item = self.form_layout.itemAt(self.debug_row_index, QtWidgets.QFormLayout.LabelRole)
                 if label_item and label_item.widget():
                     label_item.widget().setFont(label_font)
                 self.flrig_debug_line.setText(self.last_flrig_debug)
             
     def load_and_show_callsign_tags(self):
+        """
+        Load and display tags for the current callsign.
+        """
         callsign = self.call.text().strip().upper()
         if not callsign:
             self.show_callsign_tags([])
@@ -510,10 +561,16 @@ class QSOForm(QtWidgets.QMainWindow):
         self.show_callsign_tags(tags)
                 
     def open_callsign_tag_editor(self):
+        """
+        Open the callsign tag editor dialog.
+        """
         dlg = CallsignTagEditor(self, translation=self.translation)
         dlg.exec_()
         
     def lookup_qrz_gui(self):
+        """
+        Perform a QRZ.com lookup for the current callsign.
+        """
         call = self.call.text().strip()
         if not call or not self.config.get("qrz_username") or not self.config.get("qrz_password"):
             self.statusbar.showMessage(self.translation["qrz_skipped"])
@@ -539,12 +596,18 @@ class QSOForm(QtWidgets.QMainWindow):
         self.load_and_show_callsign_tags()
         
     def on_status_message_changed(self, msg):
+        """
+        Handle changes to the status bar message.
+        """
         timestamp = now_utc_str()
         entry = f"{timestamp} {msg}"
         self.status_history.append(entry)
         log_info(msg)
 
     def show_status_history(self, event):
+        """
+        Show a dialog with the status message history.
+        """
         dlg = QtWidgets.QDialog(self)
         dlg.setWindowTitle(self.translation.get("status_history", "Status History"))
         layout = QtWidgets.QVBoxLayout(dlg)
@@ -557,6 +620,9 @@ class QSOForm(QtWidgets.QMainWindow):
         dlg.exec_()
 
     def closeEvent(self, event):
+        """
+        Handle the window close event.
+        """
         if self.flrig_worker:
             self.flrig_worker.running = False
             self.flrig_worker.wait()
