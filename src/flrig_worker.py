@@ -4,6 +4,7 @@ Worker for FLRig communication with error handling and logging.
 
 from PyQt5 import QtCore
 from src.logger import log_error, log_info
+import threading
 
 class FLRigWorker(QtCore.QThread):
     """
@@ -20,7 +21,11 @@ class FLRigWorker(QtCore.QThread):
         self.last_freq_a = None
         self.last_freq_b = None
         self.last_vfo = "A"
-
+        self._poll_now_event = threading.Event()  # <-- NEU
+    def poll_now(self):
+        self._poll_now_event.set() 
+        # Set the event to trigger immediate polling
+             
     def run(self):
         import time
         import xmlrpc.client
@@ -81,11 +86,14 @@ class FLRigWorker(QtCore.QThread):
                     f"B: {round(freq_b/1e6,3) if freq_b else '-'} MHz {mode_b} | "
                     f"Used: {self.last_vfo} {freq} Hz {mode} Band={band}"
                 )
+                self.result.emit(freq, mode, band, debug_msg)
             except Exception as e:
                 debug_msg += f"FLRig-Error: {e}"
                 log_error(debug_msg)
-            self.result.emit(freq, mode, band, debug_msg)
-            time.sleep(2)
+                self.result.emit("", "", "", debug_msg)
+           # Wait on Event odorer Timeout (2 seconds)
+            self._poll_now_event.wait(timeout=2)
+            self._poll_now_event.clear()
 
     @staticmethod
     def freq_to_band(freq):

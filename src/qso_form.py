@@ -37,6 +37,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.update_datetime)
         self.timer.start(1000)
         self.start_flrig_worker()
+        self.call.setFocus() # Set focus to the call sign field
 
     def init_ui(self):
         self.setWindowTitle(self.translation["app_title"])
@@ -228,25 +229,37 @@ class QSOForm(QtWidgets.QMainWindow):
             except Exception:
                 return str(freq_str)
 
-        # Nur überschreiben, wenn FLRig-Daten vorhanden (Verbindung ok)
         if flrig_connected:
-            self.freq.setText(format_freq(freq) if freq else "")
+            # Frequenz immer überschreiben, wenn unterschiedlich
+            formatted_freq = format_freq(freq) if freq else ""
+            if self.freq.text().strip() != formatted_freq:
+                self.freq.setText(formatted_freq)
+
+            # Mode immer überschreiben, wenn unterschiedlich
             mode_val = simplify_mode(mode) if mode else ""
-            self.mode.setText(mode_val)
-            self.band.setText(band if band else "")
+            if self.mode.text().strip().upper() != mode_val:
+                self.mode.setText(mode_val)
+            else:
+                mode_val = self.mode.text().strip().upper()
+
+            # Band immer überschreiben, wenn unterschiedlich
+            band_val = band if band else ""
+            if self.band.text().strip() != band_val:
+                self.band.setText(band_val)
+
             self.last_flrig_debug = debug_msg
             if self.flrig_debug_line:
                 self.flrig_debug_line.setText(debug_msg)
-            # RST Felder vorbelegen (nur überschreiben, wenn leer oder Wert nicht passend)
+            # RST Felder vorbelegen (nur wenn leer)
             if mode_val == "CW":
-                if self.rst_sent.text() != "599":
+                if self.rst_sent.text().strip() == "":
                     self.rst_sent.setText("599")
-                if self.rst_rcvd.text() != "599":
+                if self.rst_rcvd.text().strip() == "":
                     self.rst_rcvd.setText("599")
             elif mode_val:
-                if self.rst_sent.text() != "59":
+                if self.rst_sent.text().strip() == "":
                     self.rst_sent.setText("59")
-                if self.rst_rcvd.text() != "59":
+                if self.rst_rcvd.text().strip() == "":
                     self.rst_rcvd.setText("59")
         else:
             self.last_flrig_debug = debug_msg
@@ -311,7 +324,10 @@ class QSOForm(QtWidgets.QMainWindow):
         self.update_datetime()
         self.statusbar.showMessage(self.translation["fields_reset"])
         self.show_callsign_tags([]) 
-
+        self.call.setFocus() # Set focus to the call sign field
+        if self.flrig_worker: # Poll FLRig for current values
+            self.flrig_worker.poll_now()
+            
     def adif_freq_value(self):
         # Wandelt "7.012.620" in "7.01262" um
         freq_parts = self.freq.text().split(".")
@@ -382,6 +398,9 @@ class QSOForm(QtWidgets.QMainWindow):
             self.statusbar.showMessage(f"{self.translation['send_error']}: {e}")
             log_error(f"WLGate send error: {e}")
 
+        if self.flrig_worker: # Poll FLRig for current values
+            self.flrig_worker.poll_now()
+            
     def add_flrig_debug_field(self):
         font = self.font()
         label_font = QtGui.QFont(font)

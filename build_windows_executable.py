@@ -11,6 +11,7 @@ PyInstaller.__main__.run([
     '--add-data=icons;icons',
     '--add-data=i18n;i18n',
     '--icon=icons/wlgate.png',
+     '--name=WL-QSO-Sender',
     'src/main.py',
 ])
 print("\Ready!")
