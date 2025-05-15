@@ -10,7 +10,7 @@ from src.utils import resource_path, user_data_path
 from cryptography.fernet import Fernet
 
 KEY_FILE = user_data_path("wlsender_key")
-CONFIG_FILE = "wlsender_config.json"
+CONFIG_FILE = user_data_path("wlsender_config.json")
 LANGUAGES = [("en", "language_en"), ("de", "language_de")]
 
 def get_crypto_key():

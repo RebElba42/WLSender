@@ -4,6 +4,7 @@ Logger module for error and event logging.
 
 import os
 import logging
+import logging.handlers
 
 LOGFILE = "wlsender.log"
 
@@ -34,8 +35,10 @@ logger = logging.getLogger("wlsender")
 logger.setLevel(logging.INFO)
 logger.propagate = False  # WICHTIG!
 
-# File handler for errors and info
-file_handler = logging.FileHandler(LOGFILE, encoding="utf-8")
+# Rotating file handler for errors and info (max 25MB, 3 Backups)
+file_handler = logging.handlers.RotatingFileHandler(
+    LOGFILE, maxBytes=10 * 1024 * 1024, backupCount=10, encoding="utf-8"
+)
 file_handler.setLevel(logging.INFO)
 file_formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
