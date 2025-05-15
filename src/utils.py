@@ -41,3 +41,4 @@ def user_data_path(filename):
         # Development mode: base is the project directory (one level above src)
         base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     return os.path.join(base, "data", filename)
+

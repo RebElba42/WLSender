@@ -6,9 +6,36 @@ import json
 import os
 from PyQt5 import QtWidgets
 from src.utils import load_translation
+from src.utils import resource_path, user_data_path
+from cryptography.fernet import Fernet
 
+KEY_FILE = user_data_path("wlsender_key")
 CONFIG_FILE = "wlsender_config.json"
 LANGUAGES = [("en", "language_en"), ("de", "language_de")]
+
+def get_crypto_key():
+    if not os.path.exists(KEY_FILE):
+        key = Fernet.generate_key()
+        with open(KEY_FILE, "wb") as f:
+            f.write(key)
+    else:
+        with open(KEY_FILE, "rb") as f:
+            key = f.read()
+    return key
+
+def encrypt_password(password):
+    key = get_crypto_key()
+    f = Fernet(key)
+    return f.encrypt(password.encode("utf-8")).decode("utf-8")
+
+def decrypt_password(token):
+    key = get_crypto_key()
+    f = Fernet(key)
+    try:
+        return f.decrypt(token.encode("utf-8")).decode("utf-8")
+    except Exception:
+        return ""
+    
 
 def load_config():
     """
@@ -23,6 +50,12 @@ def load_config():
             cfg["flrig_port"] = 12345
         if "language" not in cfg:
             cfg["language"] = "en"
+        # Passwort entschlüsseln, falls vorhanden
+        if cfg.get("qrz_password"):
+            try:
+                cfg["qrz_password"] = decrypt_password(cfg["qrz_password"])
+            except Exception:
+                cfg["qrz_password"] = ""
         return cfg
     return {
         "wlgate_host": "127.0.0.1",
@@ -119,7 +152,7 @@ class ConfigDialog(QtWidgets.QDialog):
             "wlgate_host": self.wlgate_host.text().strip(),
             "wlgate_port": self.wlgate_port.value(),
             "qrz_username": self.qrz_username.text().strip(),
-            "qrz_password": self.qrz_password.text(),
+            "qrz_password": encrypt_password(self.qrz_password.text()),
             "station_callsign": self.station_callsign.text().strip(),
             "flrig_host": self.flrig_host.text().strip(),
             "flrig_port": self.flrig_port.value(),

@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from datetime import datetime, timezone, timedelta
 from src.flrig_worker import FLRigWorker
 from src.qrz_lookup import lookup_qrz
-from src.config_dialog import ConfigDialog, save_config
+from src.config_dialog import ConfigDialog, save_config, load_config
 from src.logger import log_error, log_info
 from src.utils import now_utc_str
 from src.callsign_tag_editor import CallsignTagEditor
@@ -459,6 +459,7 @@ class QSOForm(QtWidgets.QMainWindow):
             old_lang = self.config.get("language", "en")
             self.config = dlg.get_config()
             save_config(self.config)
+            self.config = load_config()
             new_lang = self.config.get("language", "en")
             if new_lang != old_lang:
                 from src.utils import load_translation
