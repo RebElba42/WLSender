@@ -136,3 +136,4 @@ venv.bak/
 .dmypy.json
 dmypy.json
 data/callsign_tags.json
+*code-workspace
