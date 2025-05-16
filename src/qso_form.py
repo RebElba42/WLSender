@@ -2,6 +2,11 @@
 Main QSO form window with statusbar, debug field, error handling, and i18n.
 """
 
+import socket
+import os
+import json
+import unicodedata
+from src.utils import resource_path
 from PyQt5 import QtWidgets, QtCore, QtGui
 from datetime import datetime, timezone, timedelta
 from src.flrig_worker import FLRigWorker
@@ -11,10 +16,6 @@ from src.logger import log_error, log_info
 from src.utils import now_utc_str
 from src.callsign_tag_editor import CallsignTagEditor
 from src.utils import user_data_path
-from src.utils import resource_path
-import socket
-import os
-import json
 
 class QSOForm(QtWidgets.QMainWindow):
     """
@@ -54,7 +55,7 @@ class QSOForm(QtWidgets.QMainWindow):
         font.setPointSize(font.pointSize() + 2)  
         self.setFont(font)
         self.resize(width, height)
-        self.setMinimumSize(1000, 750) 
+        self.setMinimumSize(550, 550) 
 
         # --- ScrollArea ---
         scroll_area = QtWidgets.QScrollArea()
@@ -396,6 +397,17 @@ class QSOForm(QtWidgets.QMainWindow):
             return f"{freq_parts[0]}.{freq_parts[1]}{freq_parts[2]}"
         return self.freq.text().replace(",", ".")  # Fallback
 
+    def adif_safe(self, text):
+        """
+        Convert text to ADIF-safe ASCII: replaces German umlauts and ß, removes accents.
+        """
+        text = text.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
+        text = text.replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue")
+        text = text.replace("ß", "ss")
+        # Remove all other accents
+        text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
+        return text
+
     def send_qso(self):
         """
         Send the QSO data to WLGate via UDP.
@@ -427,7 +439,8 @@ class QSOForm(QtWidgets.QMainWindow):
             """
            Build ADIF field name value pair.
             """
-            value = value.strip()
+            # Remove German umlauts and ß
+            value = self.adif_safe(value.strip())
             return f"<{name}:{len(value)}>{value}" if value else ""
 
         adif = (
@@ -454,8 +467,9 @@ class QSOForm(QtWidgets.QMainWindow):
 
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.sendto(adif.encode('utf-8'), (self.config.get("wlgate_host", "127.0.0.1"), self.config.get("wlgate_port", 2237)))
+            sock.sendto(adif.encode('ascii', errors='replace'), (self.config.get("wlgate_host", "127.0.0.1"), self.config.get("wlgate_port", 2237)))
             sock.close()
+ 
             QtWidgets.QMessageBox.information(self, self.translation["success"], self.translation["qso_sent"])
             self.statusbar.showMessage(self.translation["qso_sent"])
             self.reset_fields()
