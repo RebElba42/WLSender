@@ -316,7 +316,25 @@ class QSOForm(QtWidgets.QMainWindow):
         toolbar.addAction(reset_action)
         toolbar.addAction(config_action)
         toolbar.addAction(tag_action)
+        toolbar.addSeparator()     
         toolbar.addAction(exit_action)
+         
+
+        # Add Spacer push to the right
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        spacer.setStyleSheet("background: transparent;")
+        toolbar.addWidget(spacer) 
+                
+        # Added Always on top checkbox 
+        self.always_on_top_checkbox = QtWidgets.QCheckBox(self.translation.get("always_on_top", "Always on top"))
+        self.always_on_top_checkbox.setChecked(False)
+        self.always_on_top_checkbox.stateChanged.connect(self.toggle_always_on_top)
+        self.always_on_top_checkbox.setStyleSheet(
+            "QCheckBox { background:transparent; color: #fff; padding: 2px 8px; border-radius: 4px; }"
+        )
+        
+        toolbar.addWidget(self.always_on_top_checkbox)
 
         menubar = self.menuBar()
         file_menu = menubar.addMenu(self.translation["file"])
@@ -327,6 +345,16 @@ class QSOForm(QtWidgets.QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
 
+    def toggle_always_on_top(self, state):
+        """
+        Toggle the always-on-top window flag based on the checkbox state.
+        """
+        if state == QtCore.Qt.Checked:
+            self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
+        else:
+            self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, False)
+        self.show()  # Necessary to apply the window flag change
+        
     def update_datetime(self):
         """
         Update the date and time fields.
