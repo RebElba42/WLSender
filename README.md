@@ -119,11 +119,12 @@ Tags Edit Dialog:
 Tags View:
 
 ![Tags View](images/screenshot_tags_view.png)
+
+Send QSO to WLGate (Animated Gif)
+
+[Send QSO to WLGate](images/SendQSO.gif)
+
 ---
-
-Send QSO to WLGate
-
-![Send QSO to WLGate](images/SendQSO.gif)
 
 ### Support
 
