@@ -2,27 +2,26 @@
 
 ## WLSender
 
-**WLSender** is a modern, PyQt5-based application for logging and sending amateur radio QSOs (contacts) via UDP to a WLGate server. It features QRZ.com integration, FLRig support, a flexible and accessible QSO form, and robust error handling and logging.
+**WLSender** is a PyQt5-based application for logging and sending amateur radio QSOs (contacts) via UDP to a WLGate server. It features QRZ.com integration, FLRig support, flexible and accessible QSO form, robust error handling as well as logging.
 
 ---
 
 ### Features
 
-- **Modern PyQt5 GUI** with resizable, scrollable QSO entry form
+- **PyQt5 GUI** with resizable, scrollable QSO entry form
 - **QRZ.com lookup** for callsign data (name, QTH, country, grid)
 - **FLRig integration** for automatic frequency, mode, and band detection
-- **ADIF export** and UDP sending to WLGate server
+- **ADIF export** via UDP sending to WLGate server
 - **Configurable station data** and persistent settings
-- **Statusbar with history** and clipboard copy
 - **Debug output** for FLRig communication
-- **Comprehensive logging** to file (no console spam)
+- **Comprehensive logging** to file (no console out)
 - **Internationalization (i18n)** ready
 
 ---
 
 ### Callsign Tagging
 
-WLSender allows you to assign and manage custom tags for any callsign.  
+WLSender allows you to assign and manage up to 5 custom tags for any callsign.  
 - Tags are displayed as bubbles below the callsign field whenever a matching callsign is entered.
 - The tag database is stored as a JSON file in the `data` directory.
 - You can add, edit, or remove tags for any callsign using the built-in tag editor dialog, accessible from the toolbar or menu.
@@ -58,6 +57,7 @@ python -m src.main
 - Frequency, mode, and band can be filled automatically via FLRig (if configured).
 - Send the QSO to WLGate via the toolbar or menu.
 - Configuration and debug options are available via the config dialog.
+- Check "Always on top" in the Tollbar if you wish to have your QSO Window always visible
 
 ---
 
