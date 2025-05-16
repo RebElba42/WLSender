@@ -112,6 +112,13 @@ Config Dialog:
 
 ![Config Dialog](images/screenshot_config.png)
 
+Tags Edit Dialog:
+
+![Tags Edit Dialog](images/screenshot_tags.png)
+
+Tags View:
+
+![Tags View](images/screenshot_tags_view.png)
 ---
 
 ### Support
