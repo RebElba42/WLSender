@@ -10,7 +10,7 @@ from src.utils import resource_path
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-    splash_pix = QtGui.QPixmap(resource_path("icons/wlgate.png"))
+    splash_pix = QtGui.QPixmap(resource_path("icons/wlicon_green.png"))
     splash = QtWidgets.QSplashScreen(splash_pix)
     splash.show()
     app.processEvents()

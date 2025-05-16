@@ -31,7 +31,7 @@ class QSOForm(QtWidgets.QMainWindow):
         self.qrz_session_key = None
         self.flrig_worker = None
         self.last_flrig_debug = ""
-        icon_path = resource_path("icons/wlgate.png")
+        icon_path = resource_path("icons/wlicon_green.png")
         self.setWindowIcon(QtGui.QIcon(icon_path))
 
         self.init_ui()
