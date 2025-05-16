@@ -1,6 +1,6 @@
 # build_windows_executable.py
 # dont forget "pip install pyinstaller first"
-# This script builds a Windows executable for the WLGate application using PyInstaller.
+# This script builds a Windows executable for the WLSender application using PyInstaller.
 # It includes the necessary data files and sets the application icon.
 import PyInstaller.__main__
 
