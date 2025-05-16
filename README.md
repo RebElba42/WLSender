@@ -121,6 +121,10 @@ Tags View:
 ![Tags View](images/screenshot_tags_view.png)
 ---
 
+Send QSO to WLGate
+
+![Send QSO to WLGate](images/SendQSO.gif)
+
 ### Support
 
 For issues or feature requests, please use the [GitHub Issues](https://github.com/RebElba42/WLSender/issues) page.
