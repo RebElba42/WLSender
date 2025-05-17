@@ -10,6 +10,7 @@
 
 #Local test Scripts
 *test.py
+*test_*
 *.sic.*
 *_sic*
 
@@ -139,3 +140,4 @@ data/callsign_tags.json
 *code-workspace
 data/wlsender_key
 *Screenrecording.pptx
+data/sent_qsos.adi

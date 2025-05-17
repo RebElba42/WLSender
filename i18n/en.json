@@ -65,5 +65,14 @@
     "edit_callsign_tags": "Edit Callsign Tags",
     "tag_limit_title": "Tag limit reached",
     "tag_limit_msg": "A maximum of 5 tags per callsign is allowed.",
-    "always_on_top": "Always on top"
+    "always_on_top": "Always on top",
+    "unsaved_qsos_found": "There are unsaved sent QSOs from the last session. \nExport now?",
+    "export_old_qsos": "Export old QSOs",
+    "export_now": "Export now",
+    "clear_file": "Clear file",
+    "keep_file": "Keep",
+    "export_qsos_on_exit": "Do you want to export all sent QSOs as ADIF before exit?",
+    "no_qsos_to_export": "No QSOs to export.",
+    "qsos_exported": "QSOs exported successfully.",
+    "export": "Export"
 }

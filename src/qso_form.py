@@ -6,6 +6,7 @@ import socket
 import os
 import json
 import unicodedata
+import shutil
 from src.utils import resource_path
 from PyQt5 import QtWidgets, QtCore, QtGui
 from datetime import datetime, timezone, timedelta
@@ -21,6 +22,8 @@ class QSOForm(QtWidgets.QMainWindow):
     """
     Main window for QSO entry and sending.
     """
+    SENT_QSOS_FILE = user_data_path("sent_qsos.adi")
+     
     def __init__(self, config, translation):
         """
         Initialize the main QSO form window.
@@ -36,12 +39,14 @@ class QSOForm(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(icon_path))
 
         self.init_ui()
+        self.check_and_handle_old_sent_qsos() 
         self.update_datetime()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_datetime)
         self.timer.start(1000)
         self.start_flrig_worker()
         self.call.setFocus() # Set focus to the call sign field
+        
 
     def init_ui(self):
         """
@@ -56,6 +61,10 @@ class QSOForm(QtWidgets.QMainWindow):
         self.setFont(font)
         self.resize(width, height)
         self.setMinimumSize(550, 550) 
+        
+        # Handle manual edit in timecounting fields
+        self.time_on_user_set = False
+        self.time_off_user_set = False
 
         # --- ScrollArea ---
         scroll_area = QtWidgets.QScrollArea()
@@ -98,11 +107,13 @@ class QSOForm(QtWidgets.QMainWindow):
         self.dxcc = QtWidgets.QLineEdit()
 
         self.qso_date_display = QtWidgets.QLineEdit()
-        self.qso_date_display.setReadOnly(True)
+        self.qso_date_display.setReadOnly(False)
         self.time_on_display = QtWidgets.QLineEdit()
-        self.time_on_display.setReadOnly(True)
+        self.time_on_display.setReadOnly(False)
         self.time_off_display = QtWidgets.QLineEdit()
-        self.time_off_display.setReadOnly(True)
+        self.time_off_display.setReadOnly(False)
+        self.time_on_display.editingFinished.connect(self.on_time_on_edited)
+        self.time_off_display.editingFinished.connect(self.on_time_off_edited)
         self.qso_date_adif = ""
         self.time_on_adif = ""
         self.time_off_adif = ""
@@ -164,6 +175,66 @@ class QSOForm(QtWidgets.QMainWindow):
         self.statusbar.showMessage(self.translation["ready"])
         self.statusbar.messageChanged.connect(self.on_status_message_changed)
         self.statusbar.mousePressEvent = self.show_status_history
+
+    def check_and_handle_old_sent_qsos(self):
+        """
+        At program start: If sent_qsos.adi exists and is not empty, offer to export or clear.
+        """
+        if os.path.exists(self.SENT_QSOS_FILE):
+            try:
+                with open(self.SENT_QSOS_FILE, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+            except Exception:
+                content = ""
+            if content:
+                msg = self.translation["unsaved_qsos_found"]
+                reply = QtWidgets.QMessageBox.question(
+                    self,
+                    self.translation["export_old_qsos"],
+                    msg,
+                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Cancel,
+                    QtWidgets.QMessageBox.Yes
+                )
+                # Yes = export now, No = clear file, Cancel = keep file
+                if reply == QtWidgets.QMessageBox.Yes:
+                    self.export_sent_qsos()
+                    self.clear_sent_qsos_file()
+                elif reply == QtWidgets.QMessageBox.No:
+                    self.clear_sent_qsos_file()
+                # Cancel: keep file as is
+            else:
+                self.clear_sent_qsos_file()
+        else:
+            self.clear_sent_qsos_file()
+
+    def clear_sent_qsos_file(self):
+        """
+        Clear the sent QSO ADIF file.
+        """
+        with open(self.SENT_QSOS_FILE, "w", encoding="utf-8") as f:
+            pass  # just clear
+
+    def append_sent_qso(self, adif_entry):
+        """
+        Append a sent QSO ADIF entry to the file.
+        """
+        with open(self.SENT_QSOS_FILE, "a", encoding="utf-8") as f:
+            f.write(adif_entry + "\n")
+
+    def export_sent_qsos(self):
+        """
+        Offer to export all sent QSOs to a file.
+        """
+        if not os.path.exists(self.SENT_QSOS_FILE):
+            QtWidgets.QMessageBox.information(self, self.translation["export"], self.translation["no_qsos_to_export"])
+            return
+        options = QtWidgets.QFileDialog.Options()
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, self.translation["export"], "", "ADIF Files (*.adi);;All Files (*)", options=options
+        )
+        if filename:
+            shutil.copyfile(self.SENT_QSOS_FILE, filename)
+            QtWidgets.QMessageBox.information(self, self.translation["export"], self.translation["qsos_exported"])
 
     def update_rst_fields(self):
         
@@ -356,20 +427,34 @@ class QSOForm(QtWidgets.QMainWindow):
             self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, False)
         self.show()  # Necessary to apply the window flag change
         
+    def on_time_on_edited(self):
+        """Mark QSO start time as user-set."""
+        self.time_on_user_set = True
+
+    def on_time_off_edited(self):
+        """Mark QSO end time as user-set."""
+        self.time_off_user_set = True
+        
     def update_datetime(self):
         """
         Update the date and time fields.
+        Only update date if empty, and time fields only if not user-set.
         """
         now = datetime.now()
         now_utc = datetime.now(timezone.utc)
-        self.qso_date_display.setText(now.strftime("%d.%m.%Y"))
-        self.time_on_display.setText(now_utc.strftime("%H:%M:%S"))
-        # QSO end = QSO start + 20 seconds
-        time_off_utc = now_utc + timedelta(seconds=20)
-        self.time_off_display.setText(time_off_utc.strftime("%H:%M:%S"))
+        # Only set date if field is empty
+        if not self.qso_date_display.text().strip():
+            self.qso_date_display.setText(now.strftime("%d.%m.%Y"))
+        # Only set time fields if not user-set
+        if not self.time_on_user_set:
+            self.time_on_display.setText(now_utc.strftime("%H:%M:%S"))
+        if not self.time_off_user_set:
+            time_off_utc = now_utc + timedelta(seconds=20)
+            self.time_off_display.setText(time_off_utc.strftime("%H:%M:%S"))
+        # ADIF fields always from display fields
         self.qso_date_adif = now_utc.strftime("%Y%m%d")
-        self.time_on_adif = now_utc.strftime("%H%M%S")
-        self.time_off_adif = time_off_utc.strftime("%H%M%S")
+        self.time_on_adif = self.time_on_display.text().replace(":", "")
+        self.time_off_adif = self.time_off_display.text().replace(":", "")
 
     def reset_fields(self):
         """
@@ -380,6 +465,8 @@ class QSOForm(QtWidgets.QMainWindow):
                        self.country, self.operator, self.dxcc]:
             widget.clear()
         self.station_callsign.setText(self.config.get("station_callsign", ""))
+        self.time_on_user_set = False
+        self.time_off_user_set = False
         self.update_datetime()
         self.statusbar.showMessage(self.translation["fields_reset"])
         self.show_callsign_tags([]) 
@@ -474,6 +561,7 @@ class QSOForm(QtWidgets.QMainWindow):
             self.statusbar.showMessage(self.translation["qso_sent"])
             self.reset_fields()
             log_info("QSO sent to WLGate.")
+            self.append_sent_qso(adif)
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, self.translation["error"], f"{self.translation['send_error']}: {e}")
             self.statusbar.showMessage(f"{self.translation['send_error']}: {e}")
@@ -668,4 +756,21 @@ class QSOForm(QtWidgets.QMainWindow):
         if self.flrig_worker:
             self.flrig_worker.running = False
             self.flrig_worker.wait()
+        # Offer export on close if file is not empty
+        if os.path.exists(self.SENT_QSOS_FILE):
+            try:
+                with open(self.SENT_QSOS_FILE, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+            except Exception:
+                content = ""
+            if content:
+                reply = QtWidgets.QMessageBox.question(
+                    self,
+                    self.translation["export"],
+                    self.translation["export_qsos_on_exit"],
+                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+                )
+                if reply == QtWidgets.QMessageBox.Yes:
+                    self.export_sent_qsos()
+                self.clear_sent_qsos_file()
         event.accept()

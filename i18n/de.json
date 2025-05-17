@@ -65,5 +65,14 @@
     "edit_callsign_tags": "Rufzeichen-Tags bearbeiten",
     "tag_limit_title": "Tag-Limit erreicht",
     "tag_limit_msg": "Pro Rufzeichen sind maximal 5 Tags erlaubt.",
-    "always_on_top": "Immer im Vordergrund"
+    "always_on_top": "Immer im Vordergrund",
+    "unsaved_qsos_found": "Es wurden nicht exportierte QSOs aus der letzten Sitzung gefunden. \nJetzt exportieren?",
+    "export_old_qsos": "Alte QSOs exportieren",
+    "export_now": "Jetzt exportieren",
+    "clear_file": "Datei leeren",
+    "keep_file": "Behalten",
+    "export_qsos_on_exit": "Möchten Sie vor dem Beenden alle gesendeten QSOs als ADIF exportieren?",
+    "no_qsos_to_export": "Keine QSOs zum Exportieren.",
+    "qsos_exported": "QSOs erfolgreich exportiert.",
+    "export": "Exportieren"
 }
