@@ -17,6 +17,7 @@ from src.logger import log_error, log_info
 from src.utils import now_utc_str
 from src.callsign_tag_editor import CallsignTagEditor
 from src.utils import user_data_path
+from src.focus_aware_lineedit import FocusAwareLineEdit
 
 class QSOForm(QtWidgets.QMainWindow):
     """
@@ -35,6 +36,9 @@ class QSOForm(QtWidgets.QMainWindow):
         self.qrz_session_key = None
         self.flrig_worker = None
         self.last_flrig_debug = ""
+        self.qso_date_user_set = False
+        self.time_on_user_set = False
+        self.time_off_user_set = False
         icon_path = resource_path("icons/wlicon_green.png")
         self.setWindowIcon(QtGui.QIcon(icon_path))
 
@@ -106,14 +110,15 @@ class QSOForm(QtWidgets.QMainWindow):
         self.station_callsign = QtWidgets.QLineEdit(self.config.get("station_callsign", ""))
         self.dxcc = QtWidgets.QLineEdit()
 
-        self.qso_date_display = QtWidgets.QLineEdit()
+        self.qso_date_display = FocusAwareLineEdit()
         self.qso_date_display.setReadOnly(False)
-        self.time_on_display = QtWidgets.QLineEdit()
+        self.time_on_display = FocusAwareLineEdit()
         self.time_on_display.setReadOnly(False)
-        self.time_off_display = QtWidgets.QLineEdit()
+        self.time_off_display = FocusAwareLineEdit()
         self.time_off_display.setReadOnly(False)
-        self.time_on_display.editingFinished.connect(self.on_time_on_edited)
-        self.time_off_display.editingFinished.connect(self.on_time_off_edited)
+        self.qso_date_display.focused.connect(self.on_qso_date_focused)
+        self.time_on_display.focused.connect(self.on_time_on_focused)
+        self.time_off_display.focused.connect(self.on_time_off_focused)
         self.qso_date_adif = ""
         self.time_on_adif = ""
         self.time_off_adif = ""
@@ -149,8 +154,10 @@ class QSOForm(QtWidgets.QMainWindow):
         self.form_layout.addRow(self.translation["mode"], self.mode)
         self.form_layout.addRow(self.translation["rst_sent"], self.rst_sent)
         self.form_layout.addRow(self.translation["rst_rcvd"], self.rst_rcvd)
-        self.form_layout.addRow(self.translation["gridsquare"], self.gridsquare)
         self.form_layout.addRow(self.translation["comment"], self.comment)
+        self.form_layout.addRow(self.translation["qso_date"], self.qso_date_display)
+        self.form_layout.addRow(self.translation["qso_start"], self.time_on_display)
+        self.form_layout.addRow(self.translation["qso_end"], self.time_off_display)
         self.form_layout.addRow(self.translation["name"], self.name)
         self.form_layout.addRow(self.translation["qth"], self.qth)
         self.form_layout.addRow(self.translation["tx_pwr"], self.tx_pwr)
@@ -158,9 +165,6 @@ class QSOForm(QtWidgets.QMainWindow):
         self.form_layout.addRow(self.translation["operator"], self.operator)
         self.form_layout.addRow(self.translation["station_callsign"], self.station_callsign)
         self.form_layout.addRow(self.translation["dxcc"], self.dxcc)
-        self.form_layout.addRow(self.translation["qso_date"], self.qso_date_display)
-        self.form_layout.addRow(self.translation["qso_start"], self.time_on_display)
-        self.form_layout.addRow(self.translation["qso_end"], self.time_off_display)
 
         # Make labels bold (after adding the fields!)
         label_font = QtGui.QFont(font)
@@ -427,14 +431,24 @@ class QSOForm(QtWidgets.QMainWindow):
             self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, False)
         self.show()  # Necessary to apply the window flag change
         
-    def on_time_on_edited(self):
-        """Mark QSO start time as user-set."""
+    def on_qso_date_focused(self):
+        """
+        Wird aufgerufen, wenn das QSO-Datum-Feld den Fokus erhält.
+        """
+        self.qso_date_user_set = True
+
+    def on_time_on_focused(self):
+        """
+        Wird aufgerufen, wenn das QSO-Startzeit-Feld den Fokus erhält.
+        """
         self.time_on_user_set = True
 
-    def on_time_off_edited(self):
-        """Mark QSO end time as user-set."""
+    def on_time_off_focused(self):
+        """
+        Wird aufgerufen, wenn das QSO-Endzeit-Feld den Fokus erhält.
+        """
         self.time_off_user_set = True
-        
+                
     def update_datetime(self):
         """
         Update the date and time fields.
@@ -443,9 +457,9 @@ class QSOForm(QtWidgets.QMainWindow):
         now = datetime.now()
         now_utc = datetime.now(timezone.utc)
         # Only set date if field is empty
-        if not self.qso_date_display.text().strip():
+        if not self.qso_date_user_set:
             self.qso_date_display.setText(now.strftime("%d.%m.%Y"))
-        # Only set time fields if not user-set
+        # Zeitfelder nur setzen, wenn nicht user-set
         if not self.time_on_user_set:
             self.time_on_display.setText(now_utc.strftime("%H:%M:%S"))
         if not self.time_off_user_set:
@@ -465,6 +479,7 @@ class QSOForm(QtWidgets.QMainWindow):
                        self.country, self.operator, self.dxcc]:
             widget.clear()
         self.station_callsign.setText(self.config.get("station_callsign", ""))
+        self.qso_date_user_set = False
         self.time_on_user_set = False
         self.time_off_user_set = False
         self.update_datetime()
@@ -749,6 +764,43 @@ class QSOForm(QtWidgets.QMainWindow):
         layout.addWidget(btn_copy)
         dlg.exec_()
 
+    def save_session_history_adif(self):
+        """
+        Save all sent QSOs of this session as an ADIF file in data/historie with a localized timestamped filename.
+        Keep only the 100 most recent history files in the directory.
+        """
+        history_dir = user_data_path(os.path.join("", "historie"))
+        os.makedirs(history_dir, exist_ok=True)
+
+        fmt = self.translation.get("history_filename_format", "%Y-%m-%d_%H-%M-%S_history.adi")
+        now = datetime.now()
+        filename = now.strftime(fmt)
+        full_path = os.path.join(history_dir, filename)
+
+        if os.path.exists(self.SENT_QSOS_FILE):
+            try:
+                with open(self.SENT_QSOS_FILE, "r", encoding="utf-8") as src, open(full_path, "w", encoding="utf-8") as dst:
+                    dst.write(src.read())
+            except Exception as e:
+                log_error(f"Could not write session history ADIF: {e}")
+
+        # --- Keep only the 100 newest history files ---
+        try:
+            files = [os.path.join(history_dir, f) for f in os.listdir(history_dir) if f.endswith(".adi")]
+            files.sort(key=lambda x: os.path.getmtime(x))  # oldest first
+            limit = 100
+            num_to_delete = len(files) - limit
+            if num_to_delete > 0:
+                for old_file in files[:num_to_delete]:
+                    try:
+                        os.remove(old_file)
+                    except Exception as e:
+                        log_error(f"Could not remove old history file {old_file}: {e}")
+                # log userinfo
+                log_info(self.translation["history_cleanup_info"].format(count=num_to_delete, limit=limit))
+        except Exception as e:
+            log_error(f"Could not clean up history directory: {e}")
+
     def closeEvent(self, event):
         """
         Handle the window close event.
@@ -756,6 +808,10 @@ class QSOForm(QtWidgets.QMainWindow):
         if self.flrig_worker:
             self.flrig_worker.running = False
             self.flrig_worker.wait()
+        
+        # Write History adif anyways.
+        self.save_session_history_adif()
+        
         # Offer export on close if file is not empty
         if os.path.exists(self.SENT_QSOS_FILE):
             try:

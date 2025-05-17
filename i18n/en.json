@@ -74,5 +74,7 @@
     "export_qsos_on_exit": "Do you want to export all sent QSOs as ADIF before exit?",
     "no_qsos_to_export": "No QSOs to export.",
     "qsos_exported": "QSOs exported successfully.",
-    "export": "Export"
+    "export": "Export",
+    "history_filename_format": "%Y-%m-%d_%H-%M-%S_history.adi",
+    "history_cleanup_info": "{count} old history files were deleted to keep the limit of {limit} files."
 }
