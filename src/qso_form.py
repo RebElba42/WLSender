@@ -731,15 +731,22 @@ class QSOForm(QtWidgets.QMainWindow):
             self.qrz_session_key
         )
 
-        # If not found, try again without /P, /M, /AM, /MM
+        # If not found, try again with only the core callsign
         if not data:
             import re
-            match = re.match(r"^([A-Z0-9]+)(/(P|M|AM|MM))$", call, re.IGNORECASE)
-            if match:
-                base_call = match.group(1)
-                self.statusbar.showMessage(self.translation["qrz_query"].format(call=base_call))
+            def extract_core_callsign(call):
+                # Remove all prefixes (everything before the last slash)
+                core = re.split(r"/", call.strip().upper())
+                core_call = core[-1]
+                # Remove suffixes like P, M, AM, MM (with or without spaces)
+                core_call = re.sub(r"\s*(P|M|AM|MM)$", "", core_call)
+                return core_call
+
+            core_call = extract_core_callsign(call)
+            if core_call != call.strip().upper():
+                self.statusbar.showMessage(self.translation["qrz_query"].format(call=core_call))
                 data, self.qrz_session_key = lookup_qrz(
-                    base_call,
+                    core_call,
                     self.config.get("qrz_username"),
                     self.config.get("qrz_password"),
                     self.qrz_session_key

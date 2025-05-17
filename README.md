@@ -2,7 +2,7 @@
 
 ## WLSender
 
-**WLSender** is a PyQt5-based application for logging and sending amateur radio QSOs (contacts) via UDP to a WLGate server. It features QRZ.com integration, FLRig support, flexible and accessible QSO form, robust error handling as well as logging.
+**WLSender** is a PyQt5-based application that allows for editing amateur radio QSOs, sends them via UDP to a WLGate server which eventually stores them in WaveLog. It features QRZ.com integration, FLRig support, flexible and accessible QSO form, robust error handling as well as logging.
 
 ---
 
