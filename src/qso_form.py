@@ -58,8 +58,8 @@ class QSOForm(QtWidgets.QMainWindow):
         """
         self.setWindowTitle(self.translation["app_title"])
         screen = QtWidgets.QApplication.primaryScreen().availableGeometry()
-        width = min(950, screen.width() - 60)
-        height = min(1000, screen.height() - 60)
+        width = min(600, screen.width() - 60)
+        height = min(700, screen.height() - 60)
         font = self.font()
         font.setPointSize(font.pointSize() + 2)  
         self.setFont(font)
@@ -715,13 +715,14 @@ class QSOForm(QtWidgets.QMainWindow):
     def lookup_qrz_gui(self):
         """
         Perform a QRZ.com lookup for the current callsign.
+        If not found, try again without /P, /M, /AM, /MM suffix.
         """
         call = self.call.text().strip()
         if not call or not self.config.get("qrz_username") or not self.config.get("qrz_password"):
             self.statusbar.showMessage(self.translation["qrz_skipped"])
             self.show_callsign_tags([]) 
-            
             return
+
         self.statusbar.showMessage(self.translation["qrz_query"].format(call=call))
         data, self.qrz_session_key = lookup_qrz(
             call,
@@ -729,6 +730,21 @@ class QSOForm(QtWidgets.QMainWindow):
             self.config.get("qrz_password"),
             self.qrz_session_key
         )
+
+        # If not found, try again without /P, /M, /AM, /MM
+        if not data:
+            import re
+            match = re.match(r"^([A-Z0-9]+)(/(P|M|AM|MM))$", call, re.IGNORECASE)
+            if match:
+                base_call = match.group(1)
+                self.statusbar.showMessage(self.translation["qrz_query"].format(call=base_call))
+                data, self.qrz_session_key = lookup_qrz(
+                    base_call,
+                    self.config.get("qrz_username"),
+                    self.config.get("qrz_password"),
+                    self.qrz_session_key
+                )
+
         if data:
             self.name.setText(data["name"])
             self.qth.setText(data["qth"])
