@@ -7,6 +7,7 @@ import os
 import json
 import unicodedata
 import shutil
+import re
 from src.utils import resource_path
 from PyQt5 import QtWidgets, QtCore, QtGui
 from datetime import datetime, timezone, timedelta
@@ -712,13 +713,42 @@ class QSOForm(QtWidgets.QMainWindow):
         dlg = CallsignTagEditor(self, translation=self.translation)
         dlg.exec_()
         
+
+
+    def extract_core_callsign(self, call):
+        """
+        Extract the core callsign from a given callsign.
+        Removes all prefixes and suffixes like /P, /M, /AM, /MM.
+        Examples:
+            HB9HNT/P   -> HB9HNT
+            LA/DB123/P -> DB123
+            DL/W2AEE   -> W2AEE
+            DL/W2AEE/M -> W2AEE
+            HB9HNT     -> HB9HNT
+        """
+        import re
+        call = call.strip().upper()
+        # Remove all prefixes (everything before the last slash)
+        core = re.split(r"/", call)
+        if len(core) > 1 and core[-1] in ("P", "M", "AM", "MM"):
+            # If the last segment is a known suffix, take the one before
+            core_call = core[-2]
+        else:
+            core_call = core[-1]
+        log_info(f"Extracted core callsign: {core_call}")
+        return core_call
+
     def lookup_qrz_gui(self):
         """
         Perform a QRZ.com lookup for the current callsign.
-        If not found, try again without /P, /M, /AM, /MM suffix.
+        If not found, or if the result does not match the expected callsign,
+        try again with only the core callsign (removing all prefixes and suffixes).
+        Includes detailed logging for debugging.
         """
-        call = self.call.text().strip()
+        call = self.call.text().strip().upper()
+        log_info(f"QRZ Lookup: Starting for input '{call}'")
         if not call or not self.config.get("qrz_username") or not self.config.get("qrz_password"):
+            log_info("QRZ Lookup: Skipped (missing call or credentials)")
             self.statusbar.showMessage(self.translation["qrz_skipped"])
             self.show_callsign_tags([]) 
             return
@@ -730,20 +760,27 @@ class QSOForm(QtWidgets.QMainWindow):
             self.config.get("qrz_password"),
             self.qrz_session_key
         )
+        log_info(f"QRZ Lookup: Result for '{call}': {data}")
 
-        # If not found, try again with only the core callsign
-        if not data:
-            import re
-            def extract_core_callsign(call):
-                # Remove all prefixes (everything before the last slash)
-                core = re.split(r"/", call.strip().upper())
-                core_call = core[-1]
-                # Remove suffixes like P, M, AM, MM (with or without spaces)
-                core_call = re.sub(r"\s*(P|M|AM|MM)$", "", core_call)
-                return core_call
+        def is_result_matching(data, call):
+            """
+            Check if the QRZ.com result matches the expected core callsign.
+            If the 'call' field is missing in the result, use the searched call as fallback.
+            """
+            if not data:
+                log_info("QRZ Lookup: No data returned.")
+                return False
+            result_call = data.get("call", call).upper()
+            core_call = self.extract_core_callsign(call)
+            result_core_call = self.extract_core_callsign(result_call)
+            log_info(f"QRZ Lookup: Comparing core_call '{core_call}' with result_core_call '{result_core_call}'")
+            return core_call == result_core_call
 
-            core_call = extract_core_callsign(call)
-            if core_call != call.strip().upper():
+        # If no result or mismatch, try with core callsign
+        if not is_result_matching(data, call):
+            core_call = self.extract_core_callsign(call)
+            log_info(f"QRZ Lookup: Trying again with core callsign '{core_call}'")
+            if core_call != call:
                 self.statusbar.showMessage(self.translation["qrz_query"].format(call=core_call))
                 data, self.qrz_session_key = lookup_qrz(
                     core_call,
@@ -751,18 +788,23 @@ class QSOForm(QtWidgets.QMainWindow):
                     self.config.get("qrz_password"),
                     self.qrz_session_key
                 )
+                log_info(f"QRZ Lookup: Result for core callsign '{core_call}': {data}")
+            else:
+                log_info("QRZ Lookup: Core callsign is identical to input, not retrying.")
 
         if data:
-            self.name.setText(data["name"])
-            self.qth.setText(data["qth"])
-            self.country.setText(data["country"])
-            self.gridsquare.setText(data["gridsquare"])
+            log_info(f"QRZ Lookup: Data accepted for '{call}': {data}")
+            self.name.setText(data.get("name", ""))
+            self.qth.setText(data.get("qth", ""))
+            self.country.setText(data.get("country", ""))
+            self.gridsquare.setText(data.get("gridsquare", ""))
             self.statusbar.showMessage(self.translation["qrz_data_ok"].format(call=call))
         else:
-            self.statusbar.showMessage(self.translation.get("qrz_not_found", "Rufzeichen nicht bei QRZ gefunden"))
+            log_info(f"QRZ Lookup: No valid data found for '{call}' or its core callsign.")
+            self.statusbar.showMessage(self.translation.get("qrz_not_found", "Callsign not found on QRZ"))
         self.comment.setFocus()
         self.load_and_show_callsign_tags()
-        
+            
     def on_status_message_changed(self, msg):
         """
         Handle changes to the status bar message.
