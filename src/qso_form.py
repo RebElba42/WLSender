@@ -15,7 +15,7 @@ from src.flrig_worker import FLRigWorker
 from src.qrz_lookup import lookup_qrz
 from src.config_dialog import ConfigDialog, save_config, load_config
 from src.logger import log_error, log_info
-from src.utils import now_utc_str
+from src.utils import now_utc_str, AutoCloseInfoBox
 from src.callsign_tag_editor import CallsignTagEditor
 from src.utils import user_data_path
 from src.focus_aware_lineedit import FocusAwareLineEdit
@@ -573,7 +573,8 @@ class QSOForm(QtWidgets.QMainWindow):
             sock.sendto(adif.encode('ascii', errors='replace'), (self.config.get("wlgate_host", "127.0.0.1"), self.config.get("wlgate_port", 2237)))
             sock.close()
  
-            QtWidgets.QMessageBox.information(self, self.translation["success"], self.translation["qso_sent"])
+            # QtWidgets.QMessageBox.information(self, self.translation["success"], self.translation["qso_sent"])
+            AutoCloseInfoBox(self, self.translation["success"], self.translation["qso_sent"], timeout=3000).exec_()
             self.statusbar.showMessage(self.translation["qso_sent"])
             self.reset_fields()
             log_info("QSO sent to WLGate.")
